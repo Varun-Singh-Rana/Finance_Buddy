@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Finlytics | Dashboard</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../css/dash.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <div class="app-container dark">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-icon">F</div>
+          <div class="brand-name">Finlytics</div>
+        </div>
+        <nav class="nav-list">
+          <a class="nav-link active" href="#">
+            <i class="fas fa-th-large"></i>
+            <span>Dashboard</span>
+          </a>
+          <a class="nav-link" href="#">
+            <i class="fas fa-credit-card"></i>
+            <span>Transactions</span>
+          </a>
+          <a class="nav-link" href="#">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Subscriptions</span>
+          </a>
+          <a class="nav-link" href="#">
+            <i class="fas fa-lightbulb"></i>
+            <span>Savings Advisor</span>
+          </a>
+          <a class="nav-link" href="#">
+            <i class="fas fa-wallet"></i>
+            <span>Affordability</span>
+          </a>
+          <a class="nav-link" href="#">
+            <i class="fas fa-chart-line"></i>
+            <span>Forecast</span>
+          </a>
+          <a class="nav-link" href="#">
+            <i class="fas fa-file-alt"></i>
+            <span>Reports</span>
+          </a>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <header class="main-header">
+          <div class="page-title">
+            <h1>Dashboard</h1>
+            <p>Welcome back, Varun</p>
+          </div>
+          <div class="header-actions">
+            <div class="avatar">V</div>
+          </div>
+        </header>
+
+        <section class="stat-grid">
+          <div class="stat-card green">
+            <div>
+              <p>Total Income</p>
+              <h2>₹8,450</h2>
+            </div>
+            <span class="pill positive">
+              <i class="fas fa-arrow-up"></i> 12.5%
+            </span>
+          </div>
+          <div class="stat-card red">
+            <div>
+              <p>Total Expenses</p>
+              <h2>₹5,240</h2>
+            </div>
+            <span class="pill negative">
+              <i class="fas fa-arrow-down"></i> 8.2%
+            </span>
+          </div>
+          <div class="stat-card teal">
+            <div>
+              <p>Savings</p>
+              <h2>₹3,210</h2>
+            </div>
+            <span class="pill positive">
+              <i class="fas fa-arrow-up"></i> 25.8%
+            </span>
+          </div>
+        </section>
+
+        <section class="middle-grid">
+          <div class="panel">
+            <header>
+              <h3>Expense Categories</h3>
+            </header>
+            <div class="panel-body chart-placeholder pie">
+              <canvas id="expenseChart" class="chart-canvas"></canvas>
+            </div>
+          </div>
+          <div class="panel">
+            <header>
+              <h3>Monthly Spending &amp; Forecast</h3>
+            </header>
+            <div class="panel-body chart-placeholder line">
+              <canvas id="spendingChart" class="chart-canvas"></canvas>
+            </div>
+          </div>
+        </section>
+
+        <section class="bottom-grid">
+          <div class="panel suggestion">
+            <header>
+              <div class="icon-circle">
+                <i class="fas fa-piggy-bank"></i>
+              </div>
+              <h3>Saving Suggestion</h3>
+            </header>
+            <p>Automate 10% of salary into high-yield savings this month.</p>
+            <button class="btn-primary">View Tips</button>
+          </div>
+          <div class="panel transactions">
+            <header>
+              <h3>Recent Transactions</h3>
+              <button class="link-btn">View All</button>
+            </header>
+            <ul>
+              <li>
+                <div>
+                  <h4>Salary Deposit</h4>
+                  <span>Jun 30</span>
+                </div>
+                <span class="amount positive">+₹4,200</span>
+              </li>
+              <li>
+                <div>
+                  <h4>Rent</h4>
+                  <span>Jul 01</span>
+                </div>
+                <span class="amount negative">-₹1,800</span>
+              </li>
+              <li>
+                <div>
+                  <h4>Groceries</h4>
+                  <span>Jul 02</span>
+                </div>
+                <span class="amount negative">-₹220</span>
+              </li>
+            </ul>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="../js/dash.js"></script>
+  </body>
+</html>
