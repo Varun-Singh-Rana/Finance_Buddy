@@ -1,0 +1,122 @@
+:root {
+  --bg: #0b1423;
+  --panel: #111b2f;
+  --sidebar: #0f192d;
+  --text: #dce2f1;
+  --muted: #7c86a1;
+  --accent: #1ec895;
+  --border: rgba(255, 255, 255, 0.04);
+  font-family: "Poppins", sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  background: radial-gradient(at top right, #132341, #081220);
+}
+
+.sidebar {
+  width: 240px;
+  padding: 32px 20px;
+  background: var(--sidebar);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 40px;
+}
+
+.brand-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1fc7a2, #119b76);
+  display: grid;
+  place-items: center;
+  font-weight: 600;
+  color: #fff;
+}
+
+.brand-name {
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  color: var(--muted);
+  border-radius: 12px;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.nav-link i {
+  width: 18px;
+  text-align: center;
+}
+
+.nav-link.active,
+.nav-link:hover {
+  background: rgba(30, 200, 149, 0.13);
+  color: var(--text);
+}
+
+.main {
+  flex: 1;
+  padding: 32px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-title h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.page-title p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #02c2e1, #00a0c5);
+  display: grid;
+  place-items: center;
+  font-weight: 600;
+}

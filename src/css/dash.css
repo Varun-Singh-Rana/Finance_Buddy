@@ -294,13 +294,12 @@ body {
   height: 100% !important;
 }
 
-/* Chart sizing (override flex growth from .chart-placeholder) */
 .panel .panel-body {
-  height: 160px; /* adjust as needed */
+  height: 160px;
 }
 
 .panel .panel-body.chart-placeholder {
-  flex: 0 0 auto; /* prevent vertical stretch */
+  flex: 0 0 auto;
   display: block;
   padding: 8px;
 }

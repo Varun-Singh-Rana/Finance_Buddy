@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Finlytics | Transactions</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../css/transaction.css" />
+  </head>
+  <body>
+    <div class="app-container dark">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-icon">F</div>
+          <div class="brand-name">Finlytics</div>
+        </div>
+        <nav class="nav-list">
+          <a class="nav-link" href="dash.html">
+            <i class="fas fa-th-large"></i>
+            <span>Dashboard</span>
+          </a>
+          <a class="nav-link active" href="transaction.html">
+            <i class="fas fa-credit-card"></i>
+            <span>Transactions</span>
+          </a>
+          <a class="nav-link" href="subscription.html">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Subscriptions</span>
+          </a>
+          <a class="nav-link" href="saving.html">
+            <i class="fas fa-lightbulb"></i>
+            <span>Savings Advisor</span>
+          </a>
+          <a class="nav-link" href="affordability.html">
+            <i class="fas fa-wallet"></i>
+            <span>Affordability</span>
+          </a>
+          <a class="nav-link" href="forecast.html">
+            <i class="fas fa-chart-line"></i>
+            <span>Forecast</span>
+          </a>
+          <a class="nav-link" href="report.html ">
+            <i class="fas fa-file-alt"></i>
+            <span>Reports</span>
+          </a>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <header class="main-header">
+          <div class="page-title">
+            <h1>Transactions</h1>
+            <p>Welcome back, Varun</p>
+          </div>
+          <div class="header-actions">
+            <div class="avatar">V</div>
+          </div>
+        </header>
+
+        <section class="transactions-toolbar">
+          <div class="search-field">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Search transactions..." />
+          </div>
+          <div class="toolbar-selects">
+            <select>
+              <option>All Categories</option>
+              <option>Food</option>
+              <option>Transport</option>
+              <option>Entertainment</option>
+              <option>Income</option>
+            </select>
+            <select>
+              <option>All Types</option>
+              <option>Expense</option>
+              <option>Income</option>
+              <option>Transfer</option>
+            </select>
+            <button class="filter-btn">
+              <i class="fas fa-filter"></i>
+              Filters
+            </button>
+          </div>
+        </section>
+        <section class="transaction-list">
+          <article class="transaction-card expense">
+            <div class="card-left">
+              <div class="icon-wrapper food">
+                <i class="fas fa-shopping-basket"></i>
+              </div>
+              <div class="transaction-info">
+                <h3>Grocery Shopping</h3>
+                <div class="meta">
+                  <span class="badge">Food</span>
+                  <span>Oct 9, 2025</span>
+                </div>
+              </div>
+            </div>
+            <div class="card-right">
+              <span class="amount negative">-₹10,040</span>
+              <i class="fas fa-arrow-down trend"></i>
+            </div>
+          </article>
+
+          <article class="transaction-card income">
+            <div class="card-left">
+              <div class="icon-wrapper income">
+                <i class="fas fa-sack-dollar"></i>
+              </div>
+              <div class="transaction-info">
+                <h3>Salary Deposit</h3>
+                <div class="meta">
+                  <span class="badge">Income</span>
+                  <span>Oct 8, 2025</span>
+                </div>
+              </div>
+            </div>
+            <div class="card-right">
+              <span class="amount positive">+₹4,00,000</span>
+              <i class="fas fa-arrow-up trend"></i>
+            </div>
+          </article>
+
+          <article class="transaction-card expense">
+            <div class="card-left">
+              <div class="icon-wrapper entertainment">
+                <i class="fas fa-tv"></i>
+              </div>
+              <div class="transaction-info">
+                <h3>Netflix Subscription</h3>
+                <div class="meta">
+                  <span class="badge">Entertainment</span>
+                  <span>Oct 8, 2025</span>
+                </div>
+              </div>
+            </div>
+            <div class="card-right">
+              <span class="amount negative">-₹649</span>
+              <i class="fas fa-arrow-down trend"></i>
+            </div>
+          </article>
+
+          <article class="transaction-card expense">
+            <div class="card-left">
+              <div class="icon-wrapper transport">
+                <i class="fas fa-car-side"></i>
+              </div>
+              <div class="transaction-info">
+                <h3>Uber Ride</h3>
+                <div class="meta">
+                  <span class="badge">Transport</span>
+                  <span>Oct 7, 2025</span>
+                </div>
+              </div>
+            </div>
+            <div class="card-right">
+              <span class="amount negative">-₹1,944</span>
+              <i class="fas fa-arrow-down trend"></i>
+            </div>
+          </article>
+
+          <article class="transaction-card expense">
+            <div class="card-left">
+              <div class="icon-wrapper food">
+                <i class="fas fa-utensils"></i>
+              </div>
+              <div class="transaction-info">
+                <h3>Restaurant Dinner</h3>
+                <div class="meta">
+                  <span class="badge">Food</span>
+                  <span>Oct 6, 2025</span>
+                </div>
+              </div>
+            </div>
+            <div class="card-right">
+              <span class="amount negative">-₹6,288</span>
+              <i class="fas fa-arrow-down trend"></i>
+            </div>
+          </article>
+
+          <article class="transaction-card income">
+            <div class="card-left">
+              <div class="icon-wrapper income">
+                <i class="fas fa-briefcase"></i>
+              </div>
+              <div class="transaction-info">
+                <h3>Freelance Project</h3>
+                <div class="meta">
+                  <span class="badge">Income</span>
+                  <span>Oct 5, 2025</span>
+                </div>
+              </div>
+            </div>
+            <div class="card-right">
+              <span class="amount positive">+₹68,000</span>
+              <i class="fas fa-arrow-up trend"></i>
+            </div>
+          </article>
+        </section>
+      </main>
+    </div>
+    <script src="../js/transaction.js"></script>
+  </body>
+</html>
