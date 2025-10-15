@@ -30,6 +30,22 @@ body {
   border-right: 1px solid var(--border);
 }
 
+.header-actions .avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #02c2e1, #00a0c5);
+  display: grid;
+  place-items: center;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.header-actions .avatar:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 18px rgba(2, 194, 225, 0.4);
+}
+
 .brand {
   display: flex;
   align-items: center;

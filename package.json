@@ -1,21 +1,34 @@
 {
-  "name": "group_project2",
+  "name": "Finlytics",
   "version": "1.0.0",
   "description": "",
-  "main": "main.js",
+  "main": "electron/main.js",
   "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Varun-Singh-Rana/Finance_Buddy.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "devDependencies": {
+    "electron": "latest",
+    "electron-builder": "latest"
+  },
+  "author": "Varun Singh Rana, Shreya Uniyal, Shashank Tomar",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/Varun-Singh-Rana/Finance_Buddy/issues"
   },
-  "homepage": "https://github.com/Varun-Singh-Rana/Finance_Buddy#readme"
+  "homepage": "https://github.com/Varun-Singh-Rana/Finance_Buddy#readme",
+  "build": {
+    "productName": "Finlytics",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "src/assets/logo.ico"
+    }
+  }
 }

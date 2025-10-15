@@ -73,7 +73,7 @@ body {
 .brand {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 4px;
   margin-bottom: 40px;
 }
 
