@@ -13,6 +13,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <link rel="stylesheet" href="../css/forecast.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
     <div class="app-container dark">
@@ -63,6 +64,97 @@
             <div class="avatar">V</div>
           </div>
         </header>
+
+        <section class="insight-section">
+          <div class="insight-header">
+            <h2>AI-powered predictions for your financial future</h2>
+            <p>
+              Stay ahead of your finances with automated outlooks on income,
+              expenses, and upcoming risks.
+            </p>
+          </div>
+          <div class="insight-cards">
+            <article class="insight-card positive">
+              <div class="card-icon">
+                <i class="fas fa-arrow-trend-up"></i>
+              </div>
+              <div>
+                <h3>Positive Trend</h3>
+                <p>
+                  Your spending is expected to decrease by 4% over the next 3
+                  months.
+                </p>
+              </div>
+            </article>
+            <article class="insight-card growth">
+              <div class="card-icon">
+                <i class="fas fa-sack-dollar"></i>
+              </div>
+              <div>
+                <h3>Income Growth</h3>
+                <p>
+                  Projected income increase of ₹20,000 by October based on
+                  planned bonuses.
+                </p>
+              </div>
+            </article>
+            <article class="insight-card warning">
+              <div class="card-icon">
+                <i class="fas fa-circle-exclamation"></i>
+              </div>
+              <div>
+                <h3>Watch Out</h3>
+                <p>
+                  Transportation costs may rise by 6% due to summer travel
+                  demand.
+                </p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="chart-grid">
+          <div class="panel">
+            <header class="panel-header">
+              <div>
+                <h2>6-Month Forecast: Income vs Expenses</h2>
+                <p class="panel-subtitle">
+                  Track how projected earnings stack against historical and
+                  forecasted spending.
+                </p>
+              </div>
+            </header>
+            <div class="chart-wrapper">
+              <canvas
+                id="incomeExpenseChart"
+                aria-label="Income and expense trend chart"
+                role="img"
+              ></canvas>
+            </div>
+          </div>
+
+          <div class="panel">
+            <header class="panel-header">
+              <div>
+                <h2>Category-wise Forecast Comparison</h2>
+                <p class="panel-subtitle">
+                  Compare expected shifts in your key spending categories for
+                  next month.
+                </p>
+              </div>
+            </header>
+            <div class="chart-wrapper bar">
+              <canvas
+                id="categoryForecastChart"
+                aria-label="Category forecast comparison chart"
+                role="img"
+              ></canvas>
+            </div>
+            <table class="category-table">
+              <tbody id="categoryTableBody"></tbody>
+            </table>
+          </div>
+        </section>
       </main>
     </div>
     <script src="../js/forecast.js"></script>

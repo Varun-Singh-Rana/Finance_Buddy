@@ -57,14 +57,210 @@
         <header class="main-header">
           <div class="page-title">
             <h1>Subscriptions</h1>
-            <p>Welcome back, Varun</p>
+            <p>Stay on top of every recurring payment.</p>
           </div>
           <div class="header-actions">
+            <button class="btn-primary" id="addSubscriptionBtn">
+              <i class="fas fa-plus"></i>
+              <span>Add Subscription</span>
+            </button>
             <div class="avatar">V</div>
           </div>
         </header>
+
+        <section class="summary-section">
+          <div class="summary-grid">
+            <article class="summary-card accent-mint">
+              <span class="summary-label">Total Monthly Cost</span>
+              <span class="summary-value" id="totalMonthlyCost">₹0</span>
+              <span class="summary-caption">Based on billing schedules</span>
+            </article>
+            <article class="summary-card accent-blue">
+              <span class="summary-label">Active Subscriptions</span>
+              <span class="summary-value" id="activeSubscriptions">0</span>
+              <span class="summary-caption">Tracked in Finlytics</span>
+            </article>
+            <article class="summary-card accent-purple">
+              <span class="summary-label">Annual Cost</span>
+              <span class="summary-value" id="annualCost">₹0</span>
+              <span class="summary-caption">Projected over 12 months</span>
+            </article>
+          </div>
+        </section>
+
+        <section class="subscription-section">
+          <div class="section-heading">
+            <div>
+              <h2>Manage your recurring subscriptions</h2>
+              <p>Filter, review, and update your services effortlessly.</p>
+            </div>
+            <div class="subscription-toolbar">
+              <div class="search-field">
+                <i class="fas fa-search"></i>
+                <input
+                  type="text"
+                  id="subscriptionSearch"
+                  placeholder="Search subscriptions..."
+                  autocomplete="off"
+                />
+              </div>
+              <select id="categoryFilter" class="toolbar-select">
+                <option value="all">All Categories</option>
+              </select>
+              <select id="sortBy" class="toolbar-select">
+                <option value="next_billing">Next billing</option>
+                <option value="amount_desc">Amount (high to low)</option>
+                <option value="amount_asc">Amount (low to high)</option>
+                <option value="name">Name (A-Z)</option>
+              </select>
+            </div>
+          </div>
+
+          <div
+            id="subscriptionStatus"
+            class="status-banner hidden"
+            role="alert"
+          ></div>
+
+          <div id="subscriptionLoading" class="loading-state">
+            <span class="loader" aria-hidden="true"></span>
+            <p>Loading subscriptions...</p>
+          </div>
+
+          <div
+            id="subscriptionList"
+            class="subscription-grid hidden"
+            aria-live="polite"
+          ></div>
+
+          <div id="subscriptionEmptyState" class="empty-state hidden">
+            <div class="empty-illustration">
+              <i class="fas fa-calendar-plus"></i>
+            </div>
+            <h3>No subscriptions yet</h3>
+            <p>
+              Add your first subscription to start tracking recurring costs.
+            </p>
+            <button class="btn-primary" id="emptyStateAddBtn">
+              <i class="fas fa-plus"></i>
+              <span>Add Subscription</span>
+            </button>
+          </div>
+        </section>
       </main>
     </div>
+
+    <div
+      class="modal-backdrop hidden"
+      id="subscriptionModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="subscriptionModalTitle"
+    >
+      <div class="modal">
+        <header class="modal-header">
+          <div>
+            <h2 id="subscriptionModalTitle">Add Subscription</h2>
+            <p id="subscriptionModalSubtitle">
+              Track recurring expenses and stay on top of renewals.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="icon-button"
+            id="closeModalBtn"
+            aria-label="Close dialog"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </header>
+        <form id="subscriptionForm" novalidate>
+          <div class="form-grid">
+            <label class="form-field">
+              <span>Subscription Name</span>
+              <input
+                type="text"
+                name="name"
+                id="subscriptionName"
+                placeholder="e.g. Netflix"
+                required
+              />
+              <small class="field-hint"
+                >Choose a name you will recognize.</small
+              >
+            </label>
+            <label class="form-field">
+              <span>Category</span>
+              <select
+                name="category"
+                id="subscriptionCategory"
+                required
+              ></select>
+            </label>
+            <label class="form-field">
+              <span>Amount</span>
+              <input
+                type="number"
+                name="amount"
+                id="subscriptionAmount"
+                min="0"
+                step="0.01"
+                placeholder="e.g. 649"
+                required
+              />
+            </label>
+            <label class="form-field">
+              <span>Billing Cycle</span>
+              <select
+                name="billingCycle"
+                id="subscriptionBillingCycle"
+                required
+              >
+                <option value="Monthly" selected>Monthly</option>
+                <option value="Weekly">Weekly</option>
+                <option value="Quarterly">Quarterly</option>
+                <option value="Semiannual">Semiannual</option>
+                <option value="Yearly">Yearly</option>
+              </select>
+            </label>
+            <label class="form-field">
+              <span>Next Billing Date</span>
+              <input
+                type="date"
+                name="nextBilling"
+                id="subscriptionNextBilling"
+                required
+              />
+            </label>
+            <label class="form-field form-span-2">
+              <span>Notes</span>
+              <textarea
+                name="notes"
+                id="subscriptionNotes"
+                rows="3"
+                placeholder="Add reminders or credentials (optional)"
+              ></textarea>
+            </label>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary" id="cancelModalBtn">
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary" id="saveSubscriptionBtn">
+              <i class="fas fa-floppy-disk"></i>
+              <span>Save Subscription</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div
+      class="toast hidden"
+      id="subscriptionToast"
+      role="status"
+      aria-live="polite"
+    ></div>
     <script src="../js/subscription.js"></script>
   </body>
 </html>

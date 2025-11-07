@@ -63,6 +63,193 @@
             <div class="avatar">V</div>
           </div>
         </header>
+        <section class="page-content">
+          <p class="page-intro">
+            Check if you can afford a purchase based on your financial health
+          </p>
+          <div class="affordability-grid">
+            <section class="panel purchase-panel">
+              <header class="panel-header">
+                <div>
+                  <h2>Purchase Details</h2>
+                  <p class="panel-subtitle">
+                    Enter the amount and choose a plan to see if it fits your
+                    finances.
+                  </p>
+                </div>
+                <span class="panel-icon">
+                  <i class="fas fa-wallet"></i>
+                </span>
+              </header>
+              <form id="affordability-form" class="purchase-form">
+                <div class="input-group">
+                  <label for="purchase-amount">Purchase Amount (₹)</label>
+                  <div class="input-field">
+                    <span class="prefix">₹</span>
+                    <input
+                      type="number"
+                      id="purchase-amount"
+                      min="0"
+                      step="1000"
+                      placeholder="Enter amount"
+                      required
+                    />
+                  </div>
+                  <small class="hint"
+                    >We recommend keeping big-ticket purchases within your
+                    available savings.</small
+                  >
+                </div>
+                <div class="input-group">
+                  <label for="payment-plan">Payment Plan</label>
+                  <div class="select-field">
+                    <select id="payment-plan">
+                      <option value="pay-in-full">
+                        Pay in Full (One-time)
+                      </option>
+                      <option value="emi-3">3-Month EMI</option>
+                      <option value="emi-6">6-Month EMI</option>
+                      <option value="emi-12">12-Month EMI</option>
+                    </select>
+                    <i class="fas fa-chevron-down"></i>
+                  </div>
+                  <small class="hint" id="plan-description"
+                    >Uses your current savings for a one-time payment.</small
+                  >
+                </div>
+                <button type="submit" class="btn-primary">
+                  Check Affordability
+                </button>
+              </form>
+              <div id="form-feedback" class="form-feedback hidden">
+                <i class="fas fa-circle-info"></i>
+                <p></p>
+              </div>
+              <div
+                id="affordability-result"
+                class="affordability-result hidden"
+              >
+                <div class="result-banner">
+                  <span id="result-status" class="status-chip">Affordable</span>
+                  <p id="result-text">
+                    Enter a purchase amount to get started.
+                  </p>
+                </div>
+                <div class="result-grid">
+                  <div class="result-card">
+                    <span class="result-label">Monthly Payment</span>
+                    <span id="result-monthly-payment" class="result-value"
+                      >₹0</span
+                    >
+                    <span id="result-monthly-detail" class="result-detail"
+                      >Based on your plan</span
+                    >
+                  </div>
+                  <div class="result-card">
+                    <span class="result-label">Plan Duration</span>
+                    <span id="result-plan-length" class="result-value">-</span>
+                    <span id="result-total-cost" class="result-detail"
+                      >Total cost: ₹0</span
+                    >
+                  </div>
+                  <div class="result-card">
+                    <span class="result-label">Savings Impact</span>
+                    <span id="result-savings-impact" class="result-value"
+                      >-</span
+                    >
+                    <span id="result-impact-detail" class="result-detail"
+                      >-</span
+                    >
+                  </div>
+                  <div class="result-card">
+                    <span class="result-label">Recommendation</span>
+                    <span id="result-recommendation" class="result-value"
+                      >-</span
+                    >
+                    <span id="result-extra-tip" class="result-detail">-</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <section class="panel overview-panel">
+              <header class="panel-header">
+                <div>
+                  <h2>Your Financial Overview</h2>
+                  <p class="panel-subtitle">Last updated today at 9:12 AM</p>
+                </div>
+                <span class="panel-icon accent">
+                  <i class="fas fa-chart-pie"></i>
+                </span>
+              </header>
+              <div class="overview-summary">
+                <div class="overview-row">
+                  <div>
+                    <span class="overview-label">Monthly Income</span>
+                    <span class="overview-hint"
+                      >Salary + recurring inflows</span
+                    >
+                  </div>
+                  <span id="overview-income" class="overview-value positive"
+                    >₹0</span
+                  >
+                </div>
+                <div class="overview-row">
+                  <div>
+                    <span class="overview-label">Monthly Expenses</span>
+                    <span class="overview-hint">Essentials and lifestyle</span>
+                  </div>
+                  <span id="overview-expenses" class="overview-value negative"
+                    >₹0</span
+                  >
+                </div>
+                <div class="overview-row">
+                  <div>
+                    <span class="overview-label">Monthly Savings</span>
+                    <span class="overview-hint">Income minus expenses</span>
+                  </div>
+                  <span id="overview-savings" class="overview-value info"
+                    >₹0</span
+                  >
+                </div>
+              </div>
+              <div class="available-card">
+                <div>
+                  <span class="overview-label">Available for Purchase</span>
+                  <span class="overview-hint"
+                    >Safe amount you can allocate right now</span
+                  >
+                </div>
+                <span
+                  id="available-for-purchase"
+                  class="overview-value positive"
+                  >₹0</span
+                >
+              </div>
+              <div class="progress-insight">
+                <div class="insight-header">
+                  <span class="overview-label">Safe Monthly Allocation</span>
+                  <span id="safe-monthly-allocation" class="overview-value info"
+                    >₹0</span
+                  >
+                </div>
+                <p class="overview-hint">
+                  We recommend using at most 60% of your monthly savings for
+                  EMIs.
+                </p>
+                <div class="progress-bar">
+                  <div
+                    id="savings-progress"
+                    class="progress-fill"
+                    style="width: 0%"
+                  ></div>
+                </div>
+                <span id="savings-progress-label" class="progress-label"
+                  >No plan selected yet.</span
+                >
+              </div>
+            </section>
+          </div>
+        </section>
       </main>
     </div>
     <script src="../js/affordability.js"></script>

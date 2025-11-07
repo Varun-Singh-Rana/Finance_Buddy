@@ -57,12 +57,49 @@
         <header class="main-header">
           <div class="page-title">
             <h1>Savings Advisor</h1>
-            <p>Welcome back, Varun</p>
           </div>
           <div class="header-actions">
             <div class="avatar">V</div>
           </div>
         </header>
+
+        <section class="advisor-overview">
+          <div class="overview-content">
+            <div class="overview-icon">
+              <i class="fas fa-bullseye"></i>
+            </div>
+            <div>
+              <h2>Plan your savings journey</h2>
+              <p>AI-powered insights to help you save more</p>
+            </div>
+          </div>
+          <button class="btn-primary btn-plan" type="button">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Plan My Month</span>
+          </button>
+        </section>
+
+        <section class="goals-section">
+          <div class="section-header">
+            <h2>Goal Progress</h2>
+            <p>Stay on track with your target savings</p>
+          </div>
+          <div class="goal-grid" id="goalGrid"></div>
+        </section>
+
+        <section class="insights-section">
+          <div class="section-header">
+            <h2>Personalized Recommendations</h2>
+            <p>Smart suggestions tailored to your spending patterns</p>
+          </div>
+          <div class="insight-grid" id="insightGrid"></div>
+        </section>
+
+        <noscript>
+          <p class="noscript-message">
+            Enable JavaScript to view personalized savings insights.
+          </p>
+        </noscript>
       </main>
     </div>
     <script src="../js/saving.js"></script>
