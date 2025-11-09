@@ -30,6 +30,13 @@ document.addEventListener("DOMContentLoaded", () => {
         description:
           "Long-term EMI with a 6.5% total finance cost for maximum flexibility.",
       },
+      "emi-24": {
+        label: "24-Month EMI",
+        months: 24,
+        interest: 0.095,
+        description:
+          "Extended EMI with a 9.5% total finance cost for the lowest monthly payments.",
+      },
     },
   };
 

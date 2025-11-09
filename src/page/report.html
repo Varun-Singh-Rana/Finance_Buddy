@@ -61,9 +61,94 @@
             <p>Welcome back, Varun</p>
           </div>
           <div class="header-actions">
+            <button class="btn-primary" id="generateReportBtn">
+              <i class="fas fa-file-circle-plus"></i>
+              <span>Generate New Report</span>
+            </button>
             <div class="avatar">V</div>
           </div>
         </header>
+
+        <section class="reports-intro">
+          <div>
+            <h2>Generate and download financial reports</h2>
+            <p>
+              Track spending, savings, and tax summaries with fresh insights.
+            </p>
+          </div>
+        </section>
+
+        <section class="report-metrics" id="reportMetrics">
+          <article class="metric-card" data-metric="total-reports">
+            <span class="metric-label">Total Reports Generated</span>
+            <h3 class="metric-value">24</h3>
+            <span class="metric-trend positive">+8 this month</span>
+          </article>
+          <article class="metric-card" data-metric="avg-spending">
+            <span class="metric-label">Average Monthly Spending</span>
+            <h3 class="metric-value">₹4,14,400</h3>
+            <span class="metric-trend negative">-4% vs last quarter</span>
+          </article>
+          <article class="metric-card" data-metric="total-savings">
+            <span class="metric-label">Total Savings (YTD)</span>
+            <h3 class="metric-value">₹30,81,600</h3>
+            <span class="metric-trend positive">+23% vs 2024</span>
+          </article>
+        </section>
+
+        <section class="reports-toolbar">
+          <div class="search-field">
+            <i class="fas fa-search"></i>
+            <input
+              id="reportSearch"
+              type="search"
+              placeholder="Search reports"
+              autocomplete="off"
+            />
+          </div>
+          <div class="toolbar-selects">
+            <label class="select-wrapper">
+              <select id="typeFilter">
+                <option value="all">All Types</option>
+                <option value="expense">Expense Analysis</option>
+                <option value="income">Income</option>
+                <option value="savings">Savings</option>
+                <option value="tax">Tax</option>
+              </select>
+              <i class="fas fa-chevron-down"></i>
+            </label>
+            <label class="select-wrapper">
+              <select id="timeFilter">
+                <option value="this-month">This Month</option>
+                <option value="last-month">Last Month</option>
+                <option value="last-quarter">Last Quarter</option>
+                <option value="this-year">This Year</option>
+                <option value="all-time">All Time</option>
+              </select>
+              <i class="fas fa-chevron-down"></i>
+            </label>
+          </div>
+          <button class="filter-btn" id="dateRangeBtn">
+            <i class="fas fa-calendar"></i>
+            <span>Date Range</span>
+          </button>
+        </section>
+
+        <section class="report-list" id="reportList"></section>
+
+        <section class="custom-report-card">
+          <div class="custom-report-content">
+            <h3>Custom Report Generator</h3>
+            <p>
+              Create personalized reports with specific date ranges, categories,
+              and export formats in a few clicks.
+            </p>
+          </div>
+          <button class="btn-outline" id="customReportBtn">
+            <i class="fas fa-wand-magic-sparkles"></i>
+            <span>Create Custom Report</span>
+          </button>
+        </section>
       </main>
     </div>
     <script src="../js/report.js"></script>
