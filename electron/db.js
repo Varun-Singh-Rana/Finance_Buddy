@@ -1,16 +1,23 @@
+const fs = require("fs");
 const path = require("path");
 
 let dependencyError = null;
-let Pool;
+let sqlite3;
+let Database;
 
 try {
-  ({ Pool } = require("pg"));
+  sqlite3 = require("sqlite3");
+  if (typeof sqlite3.verbose === "function") {
+    sqlite3 = sqlite3.verbose();
+  }
+  ({ Database } = sqlite3);
 } catch (error) {
   dependencyError = error;
 }
 
 let envLoaded = false;
-let poolInstance = null;
+let dbInstance = null;
+let resolvedPath = null;
 
 function loadEnv() {
   if (envLoaded) {
@@ -33,102 +40,162 @@ function loadEnv() {
 
 loadEnv();
 
-function getPool() {
+function getDatabase() {
   loadEnv();
 
   if (dependencyError) {
     throw dependencyError;
   }
 
-  if (!Pool) {
+  if (!Database) {
     throw new Error(
-      "PostgreSQL driver missing. Install dependencies with `npm install`."
+      "SQLite driver missing. Install dependencies with `npm install`."
     );
   }
 
-  if (!poolInstance) {
-    poolInstance = createPool();
+  if (!dbInstance) {
+    dbInstance = createDatabase();
   }
 
-  return poolInstance;
+  return dbInstance;
 }
 
-function createPool() {
-  return new Pool(buildConnectionConfig());
+function getPool() {
+  return getDatabase();
 }
 
-function buildConnectionConfig() {
-  const connectionString =
-    process.env.FINLYTICS_DATABASE_URL || process.env.DATABASE_URL;
-  const sslSetting = parseSSL(
-    process.env.FINLYTICS_DB_SSL || process.env.PGSSLMODE
-  );
+function createDatabase() {
+  const filePath = resolveDatabasePath();
+  ensureDirectoryExists(filePath);
 
-  if (connectionString) {
-    const config = { connectionString };
-    if (sslSetting !== undefined) {
-      config.ssl = sslSetting;
+  const database = new Database(
+    filePath,
+    sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
+    (error) => {
+      if (error) {
+        throw error;
+      }
     }
-    return config;
-  }
-
-  const host =
-    process.env.FINLYTICS_DB_HOST || process.env.PGHOST || "localhost";
-  const port = Number(
-    process.env.FINLYTICS_DB_PORT || process.env.PGPORT || 5432
   );
-  const user = process.env.FINLYTICS_DB_USER || process.env.PGUSER;
-  const password = process.env.FINLYTICS_DB_PASSWORD || process.env.PGPASSWORD;
-  const database = process.env.FINLYTICS_DB_NAME || process.env.PGDATABASE;
 
-  if (!user || !database) {
-    throw new Error(
-      "Missing database credentials. Provide FINLYTICS_DATABASE_URL or FINLYTICS_DB_HOST/USER/PASSWORD/NAME in a .env file."
-    );
-  }
+  database.query = (sql, params = []) => runQuery(database, sql, params);
 
-  const config = { host, port, user, password, database };
-  if (sslSetting !== undefined) {
-    config.ssl = sslSetting;
-  }
-  return config;
+  return database;
 }
 
-function parseSSL(value) {
-  if (!value) {
-    return undefined;
+function resolveDatabasePath() {
+  if (resolvedPath) {
+    return resolvedPath;
   }
 
-  const normalized = value.toString().toLowerCase();
-  if (["require", "true", "1", "verify-full"].includes(normalized)) {
-    return { rejectUnauthorized: false };
-  }
+  const rawValue =
+    process.env.FINLYTICS_DB_PATH ||
+    process.env.FINLYTICS_DATABASE_URL ||
+    process.env.DATABASE_URL;
 
-  if (["disable", "false", "0"].includes(normalized)) {
-    return false;
-  }
-
-  return undefined;
+  resolvedPath = normalizeDatabasePath(rawValue);
+  return resolvedPath;
 }
 
-function query(text, params) {
-  const pool = getPool();
-  return pool.query(text, params);
+function normalizeDatabasePath(input) {
+  const projectRoot = path.resolve(__dirname, "..", "");
+  if (!input) {
+    return path.resolve(projectRoot, "data/finlytics.sqlite");
+  }
+
+  let value = input.trim();
+
+  if (/^sqlite:/i.test(value)) {
+    try {
+      const parsed = new URL(value);
+      const host = parsed.hostname ? `//${parsed.hostname}` : "";
+      value = decodeURIComponent(`${host}${parsed.pathname || ""}`);
+    } catch (_error) {
+      value = value.replace(/^sqlite:/i, "");
+    }
+  }
+
+  if (/^file:/i.test(value)) {
+    value = value.replace(/^file:/i, "");
+  }
+
+  if (process.platform === "win32" && /^\/[a-zA-Z]:/.test(value)) {
+    value = value.slice(1);
+  }
+
+  if (path.isAbsolute(value)) {
+    return value;
+  }
+
+  return path.resolve(projectRoot, value);
+}
+
+function ensureDirectoryExists(filePath) {
+  const directory = path.dirname(filePath);
+  if (!fs.existsSync(directory)) {
+    fs.mkdirSync(directory, { recursive: true });
+  }
+}
+
+function runQuery(database, sql, inputParams) {
+  const queryText = typeof sql === "string" ? sql : String(sql || "");
+  const params = Array.isArray(inputParams)
+    ? inputParams
+    : inputParams === undefined
+    ? []
+    : [inputParams];
+  const isSelect = /^\s*(select|with|pragma)\b/i.test(queryText);
+
+  return new Promise((resolve, reject) => {
+    if (isSelect) {
+      database.all(queryText, params, (error, rows) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve({ rows });
+      });
+      return;
+    }
+
+    database.run(queryText, params, function runCallback(error) {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve({ rows: [], lastID: this.lastID, changes: this.changes });
+    });
+  });
+}
+
+function query(sql, params) {
+  const database = getDatabase();
+  return runQuery(database, sql, params);
 }
 
 function closePool() {
-  if (!poolInstance) {
+  if (!dbInstance) {
     return Promise.resolve();
   }
 
-  const closing = poolInstance.end();
-  poolInstance = null;
-  return closing;
+  const closingDb = dbInstance;
+  dbInstance = null;
+
+  return new Promise((resolve, reject) => {
+    closingDb.close((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
 }
 
 function formatConnectionError(error) {
-  const base = error?.message || "Unknown connection error.";
-  return `${base} Configure PostgreSQL credentials in .env (FINLYTICS_DATABASE_URL or FINLYTICS_DB_HOST/USER/PASSWORD/NAME).`;
+  const base = error?.message || "Unable to open SQLite database.";
+  const target = resolveDatabasePath();
+  return `${base} Verify FINLYTICS_DB_PATH or FINLYTICS_DATABASE_URL (current path: ${target}).`;
 }
 
 function normalizeDbError(error) {
@@ -137,10 +204,11 @@ function normalizeDbError(error) {
   }
 
   const known = {
-    28000: "Authentication failed. Check your database username or password.",
-    "28P01": "Authentication failed. Check your database username or password.",
-    "3D000": "Database not found. Verify FINLYTICS_DB_NAME.",
-    42601: "Database query syntax error.",
+    SQLITE_CONSTRAINT:
+      "Constraint failed. Check for duplicate or invalid data.",
+    SQLITE_BUSY: "Database is busy. Please retry in a moment.",
+    SQLITE_READONLY: "Database is read-only. Adjust file permissions.",
+    SQLITE_ERROR: "Database query error. Review the SQL statement.",
   };
 
   if (error.code && known[error.code]) {
@@ -152,11 +220,12 @@ function normalizeDbError(error) {
 
 module.exports = {
   dependencyError,
+  getDatabase,
   getPool,
   closePool,
   query,
   loadEnv,
-  parseSSL,
+  resolveDatabasePath,
   formatConnectionError,
   normalizeDbError,
 };

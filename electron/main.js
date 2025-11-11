@@ -1,8 +1,36 @@
 const { app, BrowserWindow } = require("electron");
 const path = require("path");
+const database = require("./db");
 
-function createWindow() {
-  const mainWindow = new BrowserWindow({
+let mainWindow;
+
+async function resolveInitialPage() {
+  try {
+    const db = database.getPool();
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS user_profile (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        full_name TEXT NOT NULL,
+        date_of_birth TEXT NOT NULL,
+        monthly_income REAL NOT NULL CHECK (monthly_income >= 0),
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    const result = await db.query(
+      "SELECT id FROM user_profile ORDER BY id LIMIT 1;"
+    );
+
+    const hasProfile = Array.isArray(result.rows) && result.rows.length > 0;
+    return hasProfile ? "dash.html" : "login.html";
+  } catch (error) {
+    console.error("Finlytics main: unable to inspect user profile", error);
+    return "login.html";
+  }
+}
+
+async function createWindow() {
+  mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     minWidth: 900,
@@ -20,14 +48,31 @@ function createWindow() {
     show: false,
   });
 
-  mainWindow.loadFile(path.join("src/page/dash.html"));
+  const targetPage = await resolveInitialPage();
+  const targetPath = path.join(__dirname, "../src/page", targetPage);
+
+  mainWindow.once("ready-to-show", () => {
+    mainWindow.show();
+  });
+
+  try {
+    await mainWindow.loadFile(targetPath);
+  } catch (error) {
+    console.error("Finlytics main: failed to load page", error);
+  }
 
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
 }
 
-app.on("ready", createWindow);
+app.on("ready", async () => {
+  try {
+    await createWindow();
+  } catch (error) {
+    console.error("Finlytics main: window creation failed", error);
+  }
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
@@ -35,8 +80,12 @@ app.on("window-all-closed", () => {
   }
 });
 
-app.on("activate", () => {
+app.on("activate", async () => {
   if (mainWindow === null) {
-    createWindow();
+    try {
+      await createWindow();
+    } catch (error) {
+      console.error("Finlytics main: re-create window failed", error);
+    }
   }
 });

@@ -38,7 +38,7 @@ Machine Learning Layer:
 
 Database:
 
-- SQLite (local) or PostgreSQL (for multi-user/server setup)
+- SQLite (local, default storage)
 
 Example Key Functions
 
@@ -71,6 +71,8 @@ Run the application:
 ```
 npm start
 ```
+
+By default FinLytics keeps data in `data/finlytics.sqlite`. Override the location by setting `FINLYTICS_DB_PATH` in `.env` if you prefer a custom path.
 
 Access the app:
 

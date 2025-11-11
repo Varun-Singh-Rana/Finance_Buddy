@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Finlytics | Welcome</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../css/login.css" />
+  </head>
+  <body class="auth-body">
+    <div class="auth-shell">
+      <div class="brand-block">
+        <div class="brand-icon">F</div>
+        <div class="brand-text">
+          <h1>Finlytics</h1>
+          <p>Your intelligent finance companion</p>
+        </div>
+      </div>
+
+      <main class="auth-card" role="main">
+        <header class="card-header">
+          <h2>Let&apos;s get to know you</h2>
+          <p>Provide a few details so we can personalise your dashboard.</p>
+        </header>
+
+        <form id="userProfileForm" novalidate>
+          <div class="form-field">
+            <label for="fullName">Full name</label>
+            <div class="input-wrapper">
+              <i class="fas fa-user"></i>
+              <input
+                type="text"
+                id="fullName"
+                name="fullName"
+                autocomplete="name"
+                placeholder="Enter your name"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-field">
+              <label for="dateOfBirth">Date of birth</label>
+              <div class="input-wrapper">
+                <i class="fas fa-calendar"></i>
+                <input
+                  type="date"
+                  id="dateOfBirth"
+                  name="dateOfBirth"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="monthlyIncome">Monthly income</label>
+              <div class="input-wrapper">
+                <i class="fas fa-indian-rupee-sign"></i>
+                <input
+                  type="number"
+                  id="monthlyIncome"
+                  name="monthlyIncome"
+                  min="0"
+                  step="0.01"
+                  placeholder="Enter amount"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <div id="loginStatus" class="status hidden" role="alert"></div>
+
+          <button type="submit" id="loginSubmitBtn" class="btn-primary full">
+            <span id="loginSubmitLabel">Continue to dashboard</span>
+          </button>
+        </form>
+      </main>
+    </div>
+
+    <script src="../js/login.js"></script>
+  </body>
+</html>

@@ -174,8 +174,8 @@ window.addEventListener("DOMContentLoaded", () => {
   if (dependencyError) {
     const message =
       dependencyError.code === "MODULE_NOT_FOUND"
-        ? "Missing dependency 'pg'. Run `npm install` inside the project folder and restart Finlytics."
-        : `Unable to load PostgreSQL driver: ${dependencyError.message}`;
+        ? "Missing dependency 'sqlite3'. Run `npm install` inside the project folder and restart Finlytics."
+        : `Unable to load SQLite driver: ${dependencyError.message}`;
     showStatus("error", message);
     toggleAddButtons(true);
     return;
@@ -286,17 +286,17 @@ async function initDatabase() {
 
   try {
     await pool.query(`
-			CREATE TABLE IF NOT EXISTS subscriptions (
-				id SERIAL PRIMARY KEY,
-				name TEXT NOT NULL,
-				category TEXT NOT NULL,
-				amount NUMERIC(12, 2) NOT NULL CHECK (amount >= 0),
-				billing_cycle TEXT NOT NULL,
-				next_billing_date DATE NOT NULL,
-				notes TEXT,
-				created_at TIMESTAMPTZ DEFAULT NOW()
-			);
-		`);
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        category TEXT NOT NULL,
+        amount REAL NOT NULL CHECK (amount >= 0),
+        billing_cycle TEXT NOT NULL,
+        next_billing_date TEXT NOT NULL,
+        notes TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
     state.dbReady = true;
     toggleAddButtons(false);
     resetForm();
@@ -320,17 +320,20 @@ async function loadSubscriptions() {
   setLoading(true);
   try {
     const result = await pool.query(`
-			SELECT
-				id,
-				name,
-				category,
-				amount::float8 AS amount,
-				billing_cycle,
-				next_billing_date,
-				notes
-			FROM subscriptions
-			ORDER BY next_billing_date ASC NULLS LAST, name ASC;
-		`);
+      SELECT
+        id,
+        name,
+        category,
+        amount,
+        billing_cycle,
+        next_billing_date,
+        notes
+      FROM subscriptions
+      ORDER BY
+        CASE WHEN next_billing_date IS NULL OR next_billing_date = '' THEN 1 ELSE 0 END,
+        next_billing_date ASC,
+        name COLLATE NOCASE ASC;
+    `);
 
     state.subscriptions = result.rows.map(normalizeRow);
 
@@ -611,7 +614,7 @@ function handleFormSubmit(event) {
   if (!state.dbReady || !pool) {
     showStatus(
       "error",
-      "Configure the PostgreSQL connection before adding subscriptions."
+      "Configure the database connection before adding subscriptions."
     );
     return;
   }
@@ -651,7 +654,7 @@ async function saveSubscription(payload) {
       `INSERT INTO subscriptions
 				(name, category, amount, billing_cycle, next_billing_date, notes)
 			VALUES
-				($1, $2, $3, $4, $5, NULLIF($6, ''));
+				(?, ?, ?, ?, ?, NULLIF(?, ''));
 		`,
       [
         payload.name,
@@ -711,7 +714,7 @@ async function deleteSubscription(id, name) {
 
   setLoading(true);
   try {
-    await pool.query("DELETE FROM subscriptions WHERE id = $1;", [id]);
+    await pool.query("DELETE FROM subscriptions WHERE id = ?;", [id]);
     showToast(`${name} removed`);
     await loadSubscriptions();
   } catch (error) {
