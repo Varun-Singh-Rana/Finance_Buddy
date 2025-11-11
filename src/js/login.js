@@ -2,7 +2,6 @@ const database = require("../../electron/db");
 const dependencyError = database.dependencyError;
 
 const elements = {};
-let connection = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   cacheElements();
@@ -37,10 +36,9 @@ async function initialize() {
   }
 
   try {
-    connection = database.getPool();
-    await ensureUserTable();
-    const exists = await hasUserProfile();
-    if (exists) {
+    await database.ensureUserProfileTable();
+    const profile = await database.getUserProfile();
+    if (profile) {
       redirectToDashboard();
     }
   } catch (error) {
@@ -64,40 +62,8 @@ function toggleForm(disabled) {
   });
 }
 
-async function ensureUserTable() {
-  if (!connection) {
-    return;
-  }
-
-  await connection.query(`
-		CREATE TABLE IF NOT EXISTS user_profile (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			full_name TEXT NOT NULL,
-			date_of_birth TEXT NOT NULL,
-			monthly_income REAL NOT NULL CHECK (monthly_income >= 0),
-			created_at TEXT DEFAULT CURRENT_TIMESTAMP
-		);
-	`);
-}
-
-async function hasUserProfile() {
-  if (!connection) {
-    return false;
-  }
-
-  const result = await connection.query(
-    "SELECT id FROM user_profile ORDER BY id LIMIT 1;"
-  );
-  return Array.isArray(result.rows) && result.rows.length > 0;
-}
-
 async function handleSubmit(event) {
   event.preventDefault();
-
-  if (!connection) {
-    showStatus("error", "Database connection unavailable.");
-    return;
-  }
 
   const payload = {
     name: elements.fullName?.value.trim() || "",
@@ -115,12 +81,11 @@ async function handleSubmit(event) {
   showStatus("", "");
 
   try {
-    await connection.query("DELETE FROM user_profile;");
-    await connection.query(
-      `INSERT INTO user_profile (full_name, date_of_birth, monthly_income)
-			 VALUES (?, ?, ?);`,
-      [payload.name, payload.dob, payload.income]
-    );
+    await database.saveUserProfile({
+      fullName: payload.name,
+      dateOfBirth: payload.dob,
+      monthlyIncome: payload.income,
+    });
 
     showStatus("success", "Profile saved! Redirecting to your dashboard...");
     setTimeout(redirectToDashboard, 900);

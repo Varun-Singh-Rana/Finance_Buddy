@@ -57,7 +57,7 @@
         <header class="main-header">
           <div class="page-title">
             <h1>Affordability</h1>
-            <p>Welcome back, Varun</p>
+            <p id="affordability-greeting">Welcome back!</p>
           </div>
           <div class="header-actions">
             <div class="avatar">V</div>
@@ -176,7 +176,9 @@
               <header class="panel-header">
                 <div>
                   <h2>Your Financial Overview</h2>
-                  <p class="panel-subtitle">Last updated today at 9:12 AM</p>
+                  <p id="overview-last-updated" class="panel-subtitle">
+                    Last updated just now
+                  </p>
                 </div>
                 <span class="panel-icon accent">
                   <i class="fas fa-chart-pie"></i>
@@ -197,9 +199,24 @@
                 <div class="overview-row">
                   <div>
                     <span class="overview-label">Monthly Expenses</span>
-                    <span class="overview-hint">Essentials and lifestyle</span>
+                    <span class="overview-hint"
+                      >Recorded expenses and recurring costs</span
+                    >
                   </div>
                   <span id="overview-expenses" class="overview-value negative"
+                    >₹0</span
+                  >
+                </div>
+                <div class="overview-row">
+                  <div>
+                    <span class="overview-label">Recurring Subscriptions</span>
+                    <span class="overview-hint"
+                      >Monthly cost of all active plans</span
+                    >
+                  </div>
+                  <span
+                    id="overview-subscriptions"
+                    class="overview-value negative"
                     >₹0</span
                   >
                 </div>

@@ -121,6 +121,41 @@ body {
   color: var(--muted);
 }
 
+.page-status {
+  margin: 0 0 20px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-status.info {
+  border-color: rgba(2, 194, 225, 0.22);
+  background: rgba(2, 194, 225, 0.12);
+  color: #a7edff;
+}
+
+.page-status.error {
+  border-color: rgba(255, 95, 95, 0.24);
+  background: rgba(255, 95, 95, 0.12);
+  color: #ff9b9b;
+}
+
+.page-status.success {
+  border-color: rgba(43, 216, 135, 0.24);
+  background: rgba(43, 216, 135, 0.12);
+  color: #86f5c6;
+}
+
+.hidden {
+  display: none !important;
+}
+
 .header-actions {
   display: flex;
   align-items: center;

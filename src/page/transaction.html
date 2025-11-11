@@ -59,151 +59,143 @@
             <h1>Transactions</h1>
           </div>
           <div class="header-actions">
-            <div class="avatar">V</div>
+            <button id="transactionAddBtn" class="btn-primary">
+              <i class="fas fa-plus"></i>
+              New Transaction
+            </button>
+            <div class="avatar" id="transactionAvatar">V</div>
           </div>
         </header>
 
         <section class="transactions-toolbar">
           <div class="search-field">
             <i class="fas fa-search"></i>
-            <input type="text" placeholder="Search transactions..." />
+            <input
+              type="text"
+              id="transactionSearch"
+              placeholder="Search transactions..."
+            />
           </div>
           <div class="toolbar-selects">
-            <select>
-              <option>All Categories</option>
-              <option>Food</option>
-              <option>Transport</option>
-              <option>Entertainment</option>
-              <option>Income</option>
+            <select id="transactionCategoryFilter">
+              <option value="">All Categories</option>
             </select>
-            <select>
-              <option>All Types</option>
-              <option>Expense</option>
-              <option>Income</option>
-              <option>Transfer</option>
+            <select id="transactionTypeFilter">
+              <option value="">All Types</option>
+              <option value="expense">Expense</option>
+              <option value="income">Income</option>
+              <option value="transfer">Transfer</option>
             </select>
-            <button class="filter-btn">
-              <i class="fas fa-filter"></i>
-              Filters
+            <button
+              class="filter-btn"
+              type="button"
+              id="transactionFilterReset"
+            >
+              <i class="fas fa-rotate-left"></i>
+              Reset
             </button>
           </div>
         </section>
-        <section class="transaction-list">
-          <article class="transaction-card expense">
-            <div class="card-left">
-              <div class="icon-wrapper food">
-                <i class="fas fa-shopping-basket"></i>
-              </div>
-              <div class="transaction-info">
-                <h3>Grocery Shopping</h3>
-                <div class="meta">
-                  <span class="badge">Food</span>
-                  <span>Oct 9, 2025</span>
-                </div>
-              </div>
-            </div>
-            <div class="card-right">
-              <span class="amount negative">-₹10,040</span>
-              <i class="fas fa-arrow-down trend"></i>
-            </div>
-          </article>
-
-          <article class="transaction-card income">
-            <div class="card-left">
-              <div class="icon-wrapper income">
-                <i class="fas fa-sack-dollar"></i>
-              </div>
-              <div class="transaction-info">
-                <h3>Salary Deposit</h3>
-                <div class="meta">
-                  <span class="badge">Income</span>
-                  <span>Oct 8, 2025</span>
-                </div>
-              </div>
-            </div>
-            <div class="card-right">
-              <span class="amount positive">+₹4,00,000</span>
-              <i class="fas fa-arrow-up trend"></i>
-            </div>
-          </article>
-
-          <article class="transaction-card expense">
-            <div class="card-left">
-              <div class="icon-wrapper entertainment">
-                <i class="fas fa-tv"></i>
-              </div>
-              <div class="transaction-info">
-                <h3>Netflix Subscription</h3>
-                <div class="meta">
-                  <span class="badge">Entertainment</span>
-                  <span>Oct 8, 2025</span>
-                </div>
-              </div>
-            </div>
-            <div class="card-right">
-              <span class="amount negative">-₹649</span>
-              <i class="fas fa-arrow-down trend"></i>
-            </div>
-          </article>
-
-          <article class="transaction-card expense">
-            <div class="card-left">
-              <div class="icon-wrapper transport">
-                <i class="fas fa-car-side"></i>
-              </div>
-              <div class="transaction-info">
-                <h3>Uber Ride</h3>
-                <div class="meta">
-                  <span class="badge">Transport</span>
-                  <span>Oct 7, 2025</span>
-                </div>
-              </div>
-            </div>
-            <div class="card-right">
-              <span class="amount negative">-₹1,944</span>
-              <i class="fas fa-arrow-down trend"></i>
-            </div>
-          </article>
-
-          <article class="transaction-card expense">
-            <div class="card-left">
-              <div class="icon-wrapper food">
-                <i class="fas fa-utensils"></i>
-              </div>
-              <div class="transaction-info">
-                <h3>Restaurant Dinner</h3>
-                <div class="meta">
-                  <span class="badge">Food</span>
-                  <span>Oct 6, 2025</span>
-                </div>
-              </div>
-            </div>
-            <div class="card-right">
-              <span class="amount negative">-₹6,288</span>
-              <i class="fas fa-arrow-down trend"></i>
-            </div>
-          </article>
-
-          <article class="transaction-card income">
-            <div class="card-left">
-              <div class="icon-wrapper income">
-                <i class="fas fa-briefcase"></i>
-              </div>
-              <div class="transaction-info">
-                <h3>Freelance Project</h3>
-                <div class="meta">
-                  <span class="badge">Income</span>
-                  <span>Oct 5, 2025</span>
-                </div>
-              </div>
-            </div>
-            <div class="card-right">
-              <span class="amount positive">+₹68,000</span>
-              <i class="fas fa-arrow-up trend"></i>
-            </div>
-          </article>
-        </section>
+        <section class="transaction-list" id="transactionList"></section>
       </main>
+    </div>
+
+    <div
+      class="modal hidden"
+      id="transactionModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="transactionModalTitle"
+    >
+      <div class="modal-backdrop" data-close-modal></div>
+      <div class="modal-content">
+        <header class="modal-header">
+          <h2 id="transactionModalTitle">Add Transaction</h2>
+          <button class="modal-close" type="button" data-close-modal>
+            <i class="fas fa-times"></i>
+          </button>
+        </header>
+        <form id="transactionForm" novalidate>
+          <div class="modal-body">
+            <div class="form-grid">
+              <label class="form-field">
+                <span>Title</span>
+                <input
+                  type="text"
+                  id="transactionTitle"
+                  name="title"
+                  required
+                  placeholder="Ex: Grocery run"
+                />
+              </label>
+              <label class="form-field">
+                <span>Category</span>
+                <input
+                  type="text"
+                  id="transactionCategory"
+                  name="category"
+                  placeholder="Ex: Food"
+                />
+              </label>
+            </div>
+            <div class="form-grid">
+              <label class="form-field">
+                <span>Type</span>
+                <select id="transactionType" name="type" required>
+                  <option value="expense">Expense</option>
+                  <option value="income">Income</option>
+                  <option value="transfer">Transfer</option>
+                </select>
+              </label>
+              <label class="form-field">
+                <span>Amount</span>
+                <input
+                  type="number"
+                  id="transactionAmount"
+                  name="amount"
+                  min="0"
+                  step="0.01"
+                  required
+                  placeholder="0.00"
+                />
+              </label>
+            </div>
+            <div class="form-grid">
+              <label class="form-field">
+                <span>Date</span>
+                <input
+                  type="date"
+                  id="transactionDate"
+                  name="occurredAt"
+                  required
+                />
+              </label>
+              <label class="form-field">
+                <span>Notes</span>
+                <textarea
+                  id="transactionNotes"
+                  name="notes"
+                  rows="3"
+                  placeholder="Optional details"
+                ></textarea>
+              </label>
+            </div>
+            <div
+              id="transactionStatus"
+              class="form-status hidden"
+              role="alert"
+            ></div>
+          </div>
+          <footer class="modal-footer">
+            <button type="button" class="btn-secondary" data-close-modal>
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary" id="transactionSubmitBtn">
+              <span id="transactionSubmitLabel">Save Transaction</span>
+            </button>
+          </footer>
+        </form>
+      </div>
     </div>
     <script src="../js/transaction.js"></script>
   </body>

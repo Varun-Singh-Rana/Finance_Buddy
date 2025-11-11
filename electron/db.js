@@ -218,6 +218,43 @@ function normalizeDbError(error) {
   return error.message || String(error);
 }
 
+async function ensureUserProfileTable() {
+  await query(`
+    CREATE TABLE IF NOT EXISTS user_profile (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      full_name TEXT NOT NULL,
+      date_of_birth TEXT NOT NULL,
+      monthly_income REAL NOT NULL CHECK (monthly_income >= 0),
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+}
+
+async function getUserProfile() {
+  await ensureUserProfileTable();
+  const result = await query(
+    `SELECT id, full_name, date_of_birth, monthly_income, created_at
+     FROM user_profile
+     ORDER BY id
+     LIMIT 1;`
+  );
+  return Array.isArray(result.rows) && result.rows.length > 0
+    ? result.rows[0]
+    : null;
+}
+
+async function saveUserProfile({ fullName, dateOfBirth, monthlyIncome }) {
+  await ensureUserProfileTable();
+  const trimmedName = (fullName || "").trim();
+  await query("DELETE FROM user_profile;");
+  await query(
+    `INSERT INTO user_profile (full_name, date_of_birth, monthly_income)
+     VALUES (?, ?, ?);`,
+    [trimmedName, dateOfBirth, Number(monthlyIncome)]
+  );
+  return getUserProfile();
+}
+
 module.exports = {
   dependencyError,
   getDatabase,
@@ -228,4 +265,7 @@ module.exports = {
   resolveDatabasePath,
   formatConnectionError,
   normalizeDbError,
+  ensureUserProfileTable,
+  getUserProfile,
+  saveUserProfile,
 };

@@ -58,12 +58,14 @@
         <header class="main-header">
           <div class="page-title">
             <h1>Forecast</h1>
-            <p>Welcome back, Varun</p>
+            <p id="forecast-greeting">Welcome back!</p>
           </div>
           <div class="header-actions">
-            <div class="avatar">V</div>
+            <div class="avatar" id="forecast-avatar">F</div>
           </div>
         </header>
+
+        <div id="forecast-status" class="page-status hidden"></div>
 
         <section class="insight-section">
           <div class="insight-header">
@@ -79,10 +81,10 @@
                 <i class="fas fa-arrow-trend-up"></i>
               </div>
               <div>
-                <h3>Positive Trend</h3>
-                <p>
-                  Your spending is expected to decrease by 4% over the next 3
-                  months.
+                <h3 id="insight-positive-title">Positive Trend</h3>
+                <p id="insight-positive-text">
+                  Your spending outlook will appear here once we crunch the
+                  numbers.
                 </p>
               </div>
             </article>
@@ -91,10 +93,10 @@
                 <i class="fas fa-sack-dollar"></i>
               </div>
               <div>
-                <h3>Income Growth</h3>
-                <p>
-                  Projected income increase of ₹20,000 by October based on
-                  planned bonuses.
+                <h3 id="insight-income-title">Income Outlook</h3>
+                <p id="insight-income-text">
+                  We will project your expected income after loading recent
+                  activity.
                 </p>
               </div>
             </article>
@@ -103,10 +105,10 @@
                 <i class="fas fa-circle-exclamation"></i>
               </div>
               <div>
-                <h3>Watch Out</h3>
-                <p>
-                  Transportation costs may rise by 6% due to summer travel
-                  demand.
+                <h3 id="insight-risk-title">Watch Out</h3>
+                <p id="insight-risk-text">
+                  Potential risk alerts will display here based on your spending
+                  trends.
                 </p>
               </div>
             </article>

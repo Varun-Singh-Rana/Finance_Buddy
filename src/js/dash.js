@@ -117,22 +117,8 @@ async function updateGreeting() {
   const avatar = document.querySelector(".header-actions .avatar");
 
   try {
-    const db = database.getPool();
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS user_profile (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        full_name TEXT NOT NULL,
-        date_of_birth TEXT NOT NULL,
-        monthly_income REAL NOT NULL CHECK (monthly_income >= 0),
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    const result = await db.query(
-      "SELECT full_name FROM user_profile ORDER BY id LIMIT 1;"
-    );
-
-    const fullName = result.rows?.[0]?.full_name;
+    const profile = await database.getUserProfile();
+    const fullName = profile?.full_name;
     if (fullName && subtitle) {
       subtitle.textContent = `Welcome back, ${fullName}`;
     } else if (subtitle) {
