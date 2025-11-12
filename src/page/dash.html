@@ -58,39 +58,41 @@
         <header class="main-header">
           <div class="page-title">
             <h1>Dashboard</h1>
-            <p>Welcome back, Varun</p>
+            <p id="dash-greeting">Welcome back!</p>
           </div>
           <div class="header-actions">
-            <div class="avatar">V</div>
+            <div class="avatar" id="dash-avatar">F</div>
           </div>
         </header>
+
+        <div id="dashboard-status" class="page-status hidden"></div>
 
         <section class="stat-grid">
           <div class="stat-card green">
             <div>
               <p>Total Income</p>
-              <h2>₹8,450</h2>
+              <h2 id="stat-income-value">₹0</h2>
             </div>
-            <span class="pill positive">
-              <i class="fas fa-arrow-up"></i> 12.5%
+            <span class="pill neutral" id="stat-income-trend">
+              <i class="fas fa-minus"></i> 0%
             </span>
           </div>
           <div class="stat-card red">
             <div>
               <p>Total Expenses</p>
-              <h2>₹5,240</h2>
+              <h2 id="stat-expense-value">₹0</h2>
             </div>
-            <span class="pill negative">
-              <i class="fas fa-arrow-down"></i> 8.2%
+            <span class="pill neutral" id="stat-expense-trend">
+              <i class="fas fa-minus"></i> 0%
             </span>
           </div>
           <div class="stat-card teal">
             <div>
               <p>Savings</p>
-              <h2>₹3,210</h2>
+              <h2 id="stat-savings-value">₹0</h2>
             </div>
-            <span class="pill positive">
-              <i class="fas fa-arrow-up"></i> 25.8%
+            <span class="pill neutral" id="stat-savings-trend">
+              <i class="fas fa-minus"></i> 0%
             </span>
           </div>
         </section>
@@ -106,7 +108,7 @@
           </div>
           <div class="panel">
             <header>
-              <h3>Monthly Spending &amp; Forecast</h3>
+              <h3>Monthly Income vs Expenses</h3>
             </header>
             <div class="panel-body chart-placeholder line">
               <canvas id="spendingChart" class="chart-canvas"></canvas>
@@ -122,7 +124,9 @@
               </div>
               <h3>Saving Suggestion</h3>
             </header>
-            <p>Automate 10% of salary into high-yield savings this month.</p>
+            <p id="saving-suggestion">
+              Automate 10% of salary into high-yield savings this month.
+            </p>
             <button class="btn-primary">View Tips</button>
           </div>
           <div class="panel transactions">
@@ -130,29 +134,7 @@
               <h3>Recent Transactions</h3>
               <button class="link-btn">View All</button>
             </header>
-            <ul>
-              <li>
-                <div>
-                  <h4>Salary Deposit</h4>
-                  <span>Jun 30</span>
-                </div>
-                <span class="amount positive">+₹4,200</span>
-              </li>
-              <li>
-                <div>
-                  <h4>Rent</h4>
-                  <span>Jul 01</span>
-                </div>
-                <span class="amount negative">-₹1,800</span>
-              </li>
-              <li>
-                <div>
-                  <h4>Groceries</h4>
-                  <span>Jul 02</span>
-                </div>
-                <span class="amount negative">-₹220</span>
-              </li>
-            </ul>
+            <ul id="recent-transactions-list" aria-live="polite"></ul>
           </div>
         </section>
       </main>

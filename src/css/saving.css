@@ -108,6 +108,38 @@ body {
   gap: 28px;
 }
 
+.page-status {
+  margin: 0 0 20px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.page-status.info {
+  border-color: rgba(2, 194, 225, 0.2);
+  background: rgba(2, 194, 225, 0.1);
+  color: #a7edff;
+}
+
+.page-status.error {
+  border-color: rgba(255, 95, 95, 0.2);
+  background: rgba(255, 95, 95, 0.1);
+  color: #ff9b9b;
+}
+
+.page-status.success {
+  border-color: rgba(43, 216, 135, 0.2);
+  background: rgba(43, 216, 135, 0.1);
+  color: #86f5c6;
+}
+
+.hidden {
+  display: none !important;
+}
+
 .advisor-overview {
   display: flex;
   align-items: center;
@@ -124,10 +156,74 @@ body {
   box-shadow: 0 20px 45px rgba(8, 18, 32, 0.4);
 }
 
+.overview-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 18px;
+  width: 100%;
+}
+
+.metric-card {
+  position: relative;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(11, 20, 35, 0.55);
+  backdrop-filter: blur(6px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.metric-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(30, 200, 149, 0.35),
+    rgba(2, 143, 202, 0.15)
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.metric-card:hover::before {
+  opacity: 1;
+}
+
+.metric-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(214, 234, 255, 0.65);
+}
+
+.metric-card strong {
+  display: block;
+  margin: 6px 0;
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.metric-card small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 .overview-content {
   display: flex;
   align-items: center;
   gap: 20px;
+  flex: 1;
+}
+
+.overview-side {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  flex: 1;
 }
 
 .overview-icon {
@@ -156,16 +252,6 @@ body {
   color: var(--muted);
 }
 
-.btn-plan {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 24px;
-  font-size: 0.95rem;
-  background: linear-gradient(135deg, #02c2e1, #0193d1);
-  color: #04131c;
-}
-
 .section-header {
   display: flex;
   align-items: flex-start;
@@ -182,6 +268,202 @@ body {
   margin: 2px 0 0;
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+.plan-form {
+  background: linear-gradient(
+    160deg,
+    rgba(15, 25, 45, 0.9),
+    rgba(10, 18, 32, 0.82)
+  );
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 26px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: 0 18px 38px rgba(4, 10, 18, 0.55);
+}
+
+.form-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.form-grid input,
+.form-grid textarea {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(15, 25, 45, 0.8);
+  color: var(--text);
+  padding: 12px;
+  font-size: 0.95rem;
+  resize: vertical;
+}
+
+.form-grid input:focus,
+.form-grid textarea:focus {
+  outline: none;
+  border-color: rgba(30, 200, 149, 0.55);
+  box-shadow: 0 0 0 3px rgba(30, 200, 149, 0.18);
+}
+
+.note-field {
+  grid-column: 1 / -1;
+}
+
+.plans-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+.plan-card {
+  position: relative;
+  background: linear-gradient(
+    165deg,
+    rgba(13, 24, 40, 0.95),
+    rgba(4, 12, 22, 0.85)
+  );
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 16px 34px rgba(3, 10, 20, 0.52);
+}
+
+.plan-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    140deg,
+    var(--plan-accent, var(--accent)),
+    rgba(255, 255, 255, 0)
+  );
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.plan-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 38px rgba(3, 12, 26, 0.65);
+}
+
+.plan-card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.plan-card h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.plan-meta {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.plan-note {
+  color: rgba(214, 234, 255, 0.75);
+  line-height: 1.5;
+}
+
+.plan-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.plan-track {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.plan-fill {
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    var(--plan-accent, var(--accent)),
+    rgba(30, 200, 149, 0.4)
+  );
+}
+
+.plan-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.plan-stats strong {
+  color: var(--success);
+}
+
+.plan-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  color: rgba(124, 134, 161, 0.7);
+}
+
+.plan-foot span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.plan-foot i {
+  color: var(--plan-accent, var(--success));
+}
+
+.progress-pill {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--plan-accent, rgba(214, 234, 255, 0.85));
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+.plan-card:hover .progress-pill {
+  background: rgba(30, 200, 149, 0.18);
+  border-color: var(--plan-accent, rgba(30, 200, 149, 0.6));
 }
 
 .goal-grid {
@@ -444,9 +726,9 @@ body {
     align-items: flex-start;
   }
 
-  .btn-plan {
+  .overview-side {
+    align-items: stretch;
     width: 100%;
-    justify-content: center;
   }
 
   .section-header {

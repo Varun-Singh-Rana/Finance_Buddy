@@ -57,42 +57,121 @@
         <header class="main-header">
           <div class="page-title">
             <h1>Savings Advisor</h1>
+            <p id="saving-greeting">Plan smarter, save faster.</p>
           </div>
           <div class="header-actions">
-            <div class="avatar">V</div>
+            <div class="avatar" id="saving-avatar">F</div>
           </div>
         </header>
 
-        <section class="advisor-overview">
+        <div id="saving-status" class="page-status hidden"></div>
+
+        <section class="advisor-overview" aria-label="Savings summary">
           <div class="overview-content">
-            <div class="overview-icon">
-              <i class="fas fa-bullseye"></i>
+            <div class="overview-icon" aria-hidden="true">
+              <i class="fas fa-piggy-bank"></i>
             </div>
             <div>
-              <h2>Plan your savings journey</h2>
-              <p>AI-powered insights to help you save more</p>
+              <h2>Keep your goals in momentum</h2>
+              <p>
+                Track progress, spot gaps, and invest the surplus with
+                confidence.
+              </p>
             </div>
           </div>
-          <button class="btn-primary btn-plan" type="button">
-            <i class="fas fa-calendar-alt"></i>
-            <span>Plan My Month</span>
-          </button>
+          <div class="overview-side">
+            <div class="overview-metrics" role="list">
+              <article class="metric-card" role="listitem">
+                <span class="metric-label">Active plans</span>
+                <strong id="metric-plan-count">0</strong>
+                <small>Goals you're tracking</small>
+              </article>
+              <article class="metric-card" role="listitem">
+                <span class="metric-label">Saved so far</span>
+                <strong id="metric-saved-amount">₹0</strong>
+                <small id="metric-saved-caption">Across all plans</small>
+              </article>
+              <article class="metric-card" role="listitem">
+                <span class="metric-label">Average progress</span>
+                <strong id="metric-average-progress">0%</strong>
+                <small>Weighted by goal size</small>
+              </article>
+            </div>
+          </div>
         </section>
 
-        <section class="goals-section">
+        <section class="plan-form" aria-labelledby="planFormTitle">
           <div class="section-header">
-            <h2>Goal Progress</h2>
-            <p>Stay on track with your target savings</p>
+            <div>
+              <h2 id="planFormTitle">Create a saving plan</h2>
+              <p>Capture a goal and track progress from your Finlytics data.</p>
+            </div>
           </div>
-          <div class="goal-grid" id="goalGrid"></div>
+          <form id="saving-form" class="form-grid">
+            <label>
+              <span>Title</span>
+              <input
+                id="plan-title"
+                name="title"
+                type="text"
+                required
+                maxlength="60"
+              />
+            </label>
+            <label>
+              <span>Category</span>
+              <input
+                id="plan-category"
+                name="category"
+                type="text"
+                maxlength="40"
+                placeholder="Emergency, Vacation…"
+              />
+            </label>
+            <label>
+              <span>Target Amount (₹)</span>
+              <input
+                id="plan-target"
+                name="target"
+                type="number"
+                min="0"
+                step="1000"
+                required
+              />
+            </label>
+            <label>
+              <span>Already Saved (₹)</span>
+              <input
+                id="plan-saved"
+                name="saved"
+                type="number"
+                min="0"
+                step="1000"
+                value="0"
+              />
+            </label>
+            <label class="note-field">
+              <span>Notes</span>
+              <textarea
+                id="plan-note"
+                name="note"
+                rows="2"
+                maxlength="140"
+                placeholder="Why are you saving for this?"
+              ></textarea>
+            </label>
+            <button class="btn-primary" type="submit">Save Plan</button>
+          </form>
         </section>
 
-        <section class="insights-section">
+        <section class="plans-section" aria-labelledby="plansListTitle">
           <div class="section-header">
-            <h2>Personalized Recommendations</h2>
-            <p>Smart suggestions tailored to your spending patterns</p>
+            <div>
+              <h2 id="plansListTitle">Your saving plans</h2>
+              <p>Goals load from the Saving Plan table.</p>
+            </div>
           </div>
-          <div class="insight-grid" id="insightGrid"></div>
+          <div id="plan-list" class="plan-grid"></div>
         </section>
 
         <noscript>
