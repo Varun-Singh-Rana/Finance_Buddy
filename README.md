@@ -1,4 +1,9 @@
+<div align="center">
+<img src="src/assets/Finlytics_logo.png" alt="Finlytics logo" title="Finlytics logo" width="200"/>
+
 # FinLytics: Intelligent Financial Assistant
+
+</div>
 
 ### **Introduction**
 
@@ -51,34 +56,14 @@ Example Key Functions
 
 ---
 
-### **Installation & Setup**
-
-Clone the repository:
-
-```
-git clone https://github.com/Varun-Singh-Rana/Finance_Buddy.git
-cd Finance_Buddy
-```
-
-Install dependencies:
-
-```
-npm install
-```
-
-Run the application:
-
-```
-npm start
-```
-
-By default FinLytics keeps data in `data/finlytics.sqlite`. Override the location by setting `FINLYTICS_DB_PATH` in `.env` if you prefer a custom path.
+<div align="center">
+  
+## Download
 
 Access the app:
+[![FinLytics exe](https://img.shields.io/github/v/release/Varun-Singh-Rana/Finance_Buddy.svg?maxAge=3600&label=FinLytics-exe&labelColor=06599d&color=043b69)](https://github.com/Varun-Singh-Rana/Finance_Buddy/releases)
 
-```
-
-```
+</div>
 
 ---
 
@@ -88,4 +73,6 @@ Access the app:
 
 ---
 
-### **Screenshots**
+### **License**
+
+> This project is licensed under the MIT License — free to use, modify, and distribute with credit.
