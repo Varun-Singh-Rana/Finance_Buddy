@@ -13,8 +13,38 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <link rel="stylesheet" href="../css/saving.css" />
+    <link rel="stylesheet" href="../css/window-controls.css" />
   </head>
   <body>
+    <div class="titlebar" role="banner">
+      <div class="titlebar-drag" aria-hidden="true"></div>
+      <div class="window-controls" role="toolbar" aria-label="Window controls">
+        <button
+          type="button"
+          class="window-control-btn"
+          data-window-control="minimize"
+          aria-label="Minimize window"
+        >
+          <i class="fas fa-window-minimize" aria-hidden="true"></i>
+        </button>
+        <button
+          type="button"
+          class="window-control-btn"
+          data-window-control="maximize"
+          aria-label="Maximize window"
+        >
+          <i class="fas fa-window-maximize" aria-hidden="true"></i>
+        </button>
+        <button
+          type="button"
+          class="window-control-btn close"
+          data-window-control="close"
+          aria-label="Close window"
+        >
+          <i class="fas fa-xmark" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
     <div class="app-container dark">
       <aside class="sidebar">
         <div class="brand">
@@ -181,6 +211,7 @@
         </noscript>
       </main>
     </div>
+    <script src="../js/window-controls.js"></script>
     <script src="../js/saving.js"></script>
   </body>
 </html>

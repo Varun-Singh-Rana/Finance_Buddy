@@ -1,0 +1,85 @@
+:root {
+  --titlebar-height: 36px;
+  --titlebar-bg: rgba(9, 16, 30, 0.9);
+  --titlebar-color: #dce2f1;
+  --titlebar-hover-bg: rgba(255, 255, 255, 0.08);
+  --titlebar-close-hover-bg: rgba(239, 83, 80, 0.9);
+}
+
+body {
+  margin: 0;
+}
+
+.titlebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--titlebar-height);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 8px;
+  background: var(--titlebar-bg);
+  color: var(--titlebar-color);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  z-index: 50;
+  -webkit-app-region: drag;
+}
+
+.titlebar + .app-container {
+  margin-top: var(--titlebar-height);
+  min-height: calc(100vh - var(--titlebar-height));
+}
+
+.titlebar-drag {
+  flex: 1 1 auto;
+  height: 100%;
+}
+
+.window-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  -webkit-app-region: no-drag;
+}
+
+.window-control-btn {
+  width: 44px;
+  height: 26px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.window-control-btn:hover {
+  background: var(--titlebar-hover-bg);
+}
+
+.window-control-btn.close:hover {
+  background: var(--titlebar-close-hover-bg);
+  color: #fff;
+}
+
+.window-control-btn i {
+  pointer-events: none;
+}
+
+.window-control-btn:focus-visible {
+  outline: 2px solid rgba(2, 194, 225, 0.8);
+  outline-offset: 2px;
+}
+
+.auth-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: calc(48px + var(--titlebar-height));
+}

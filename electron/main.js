@@ -1,8 +1,49 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const database = require("./db");
 
 let mainWindow;
+
+function emitWindowState() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+  mainWindow.webContents.send("window-controls:state", {
+    isMaximized: mainWindow.isMaximized(),
+  });
+}
+
+ipcMain.handle("window-controls:get-state", () => ({
+  isMaximized: Boolean(
+    mainWindow && !mainWindow.isDestroyed() && mainWindow.isMaximized()
+  ),
+}));
+
+ipcMain.on("window-controls:action", (_event, action) => {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+
+  switch (action) {
+    case "minimize":
+      mainWindow.minimize();
+      break;
+    case "toggle-maximize":
+      if (mainWindow.isMaximized()) {
+        mainWindow.unmaximize();
+      } else {
+        mainWindow.maximize();
+      }
+      break;
+    case "close":
+      mainWindow.close();
+      return;
+    default:
+      break;
+  }
+
+  emitWindowState();
+});
 
 async function resolveInitialPage() {
   try {
@@ -53,7 +94,13 @@ async function createWindow() {
 
   mainWindow.once("ready-to-show", () => {
     mainWindow.show();
+    emitWindowState();
   });
+
+  mainWindow.on("maximize", emitWindowState);
+  mainWindow.on("unmaximize", emitWindowState);
+  mainWindow.on("enter-full-screen", emitWindowState);
+  mainWindow.on("leave-full-screen", emitWindowState);
 
   try {
     await mainWindow.loadFile(targetPath);
@@ -62,6 +109,10 @@ async function createWindow() {
   }
 
   mainWindow.on("closed", () => {
+    mainWindow.removeListener("maximize", emitWindowState);
+    mainWindow.removeListener("unmaximize", emitWindowState);
+    mainWindow.removeListener("enter-full-screen", emitWindowState);
+    mainWindow.removeListener("leave-full-screen", emitWindowState);
     mainWindow = null;
   });
 }
