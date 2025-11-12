@@ -1,7 +1,7 @@
 {
   "name": "Finlytics",
   "version": "1.0.0",
-  "description": "",
+  "description": "Personal finance insights, budgeting, and forecasting assistant.",
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",
@@ -31,8 +31,14 @@
     "directories": {
       "output": "dist"
     },
+    "extraResources": [
+      {
+        "from": "src/assets",
+        "to": "assets"
+      }
+    ],
     "win": {
-      "icon": "src/assets/logo.ico"
+      "icon": "src/assets/Finlytics_logo.ico"
     }
   }
 }
