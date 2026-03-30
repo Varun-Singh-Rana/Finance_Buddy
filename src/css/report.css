@@ -70,7 +70,9 @@ body {
   display: grid;
   place-items: center;
   font-weight: 600;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .header-actions .avatar:hover {
@@ -115,7 +117,9 @@ body {
   color: var(--muted);
   border-radius: 12px;
   text-decoration: none;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .nav-link i {
@@ -167,7 +171,9 @@ body {
   padding: 12px 20px;
   border-radius: 12px;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -187,7 +193,9 @@ body {
   padding: 12px 22px;
   border-radius: 12px;
   cursor: pointer;
-  transition: border-color 0.2s, transform 0.2s;
+  transition:
+    border-color 0.2s,
+    transform 0.2s;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -380,7 +388,9 @@ body {
   border-radius: 24px;
   padding: 20px 26px;
   border: 1px solid var(--border);
-  transition: border-color 0.2s, transform 0.2s;
+  transition:
+    border-color 0.2s,
+    transform 0.2s;
 }
 
 .report-card:hover,
@@ -516,7 +526,9 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  transition: border-color 0.2s, transform 0.2s;
+  transition:
+    border-color 0.2s,
+    transform 0.2s;
 }
 
 .download-btn:hover {
@@ -624,7 +636,9 @@ body {
 .toast.fade-out {
   opacity: 0;
   transform: translateY(12px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
 }
 
 @keyframes toast-in {
@@ -671,4 +685,90 @@ body {
     width: 100%;
     justify-content: flex-end;
   }
+}
+
+/* Modal styles for custom report builder */
+.modal {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+}
+.modal.hidden {
+  display: none;
+}
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(3, 15, 28, 0.6);
+  backdrop-filter: blur(2px);
+}
+.modal-dialog {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  width: 720px;
+  max-width: calc(100% - 40px);
+  color: var(--text);
+  box-shadow: 0 20px 40px rgba(2, 8, 20, 0.6);
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+.modal-form .form-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.modal-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.modal-form input,
+.modal-form select {
+  height: 44px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(15, 25, 45, 0.7);
+  color: var(--text);
+}
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+.modal-cancel {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
 }

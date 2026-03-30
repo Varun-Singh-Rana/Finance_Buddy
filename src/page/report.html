@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -14,7 +14,6 @@
     />
     <link rel="stylesheet" href="../css/report.css" />
     <link rel="stylesheet" href="../css/window-controls.css" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
     <div class="titlebar" role="banner">
@@ -155,7 +154,81 @@
         </section>
       </main>
     </div>
+
+    <div id="customReportModal" class="modal hidden" aria-hidden="true">
+      <div class="modal-backdrop"></div>
+      <div class="modal-dialog">
+        <header class="modal-header">
+          <h3>Create Custom Report</h3>
+          <button
+            type="button"
+            class="modal-close"
+            id="customModalClose"
+            aria-label="Close"
+          >
+            &times;
+          </button>
+        </header>
+        <form id="customReportForm" class="modal-form">
+          <div class="form-row">
+            <label>
+              Title
+              <input
+                type="text"
+                name="title"
+                id="customTitle"
+                placeholder="Monthly Snapshot - Mar 2026"
+                required
+              />
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              Start Date
+              <input type="date" name="start" id="customStart" required />
+            </label>
+            <label>
+              End Date
+              <input type="date" name="end" id="customEnd" required />
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              Report Type
+              <select name="type" id="customType">
+                <option value="summary">Summary</option>
+                <option value="expense">Expense</option>
+                <option value="income">Income</option>
+                <option value="savings">Savings</option>
+                <option value="tax">Tax</option>
+              </select>
+            </label>
+            <label>
+              Format
+              <select name="format" id="customFormat">
+                <option value="PDF">PDF</option>
+              </select>
+            </label>
+          </div>
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="btn-outline modal-cancel"
+              id="customCancel"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary" id="customCreateBtn">
+              Create Report
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <script src="../js/window-controls.js"></script>
     <script src="../js/report.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
   </body>
 </html>

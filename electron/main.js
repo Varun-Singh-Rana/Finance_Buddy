@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
+const fs = require("fs");
 const database = require("./db");
 
 let mainWindow;
@@ -15,7 +16,7 @@ function emitWindowState() {
 
 ipcMain.handle("window-controls:get-state", () => ({
   isMaximized: Boolean(
-    mainWindow && !mainWindow.isDestroyed() && mainWindow.isMaximized()
+    mainWindow && !mainWindow.isDestroyed() && mainWindow.isMaximized(),
   ),
 }));
 
@@ -59,7 +60,7 @@ async function resolveInitialPage() {
     `);
 
     const result = await db.query(
-      "SELECT id FROM user_profile ORDER BY id LIMIT 1;"
+      "SELECT id FROM user_profile ORDER BY id LIMIT 1;",
     );
 
     const hasProfile = Array.isArray(result.rows) && result.rows.length > 0;
@@ -116,6 +117,44 @@ async function createWindow() {
     mainWindow = null;
   });
 }
+
+// IPC handler to generate PDF from HTML using a hidden BrowserWindow and printToPDF
+ipcMain.handle("reports:generate-pdf", async (_event, { html, filename }) => {
+  const win = new BrowserWindow({
+    show: false,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  try {
+    const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
+    await win.loadURL(dataUrl);
+
+    // allow time for resources to load
+    await new Promise((res) => setTimeout(res, 250));
+
+    const pdfBuffer = await win.webContents.printToPDF({
+      printBackground: true,
+    });
+
+    const downloads = app.getPath("downloads") || app.getPath("desktop");
+    const safeName = (filename || "report.pdf").replace(/[\\/:*?"<>|]/g, "_");
+    const target = path.join(downloads, safeName);
+
+    await fs.promises.writeFile(target, pdfBuffer);
+    try {
+      win.destroy();
+    } catch (_e) {}
+    return { filePath: target };
+  } catch (error) {
+    try {
+      win.destroy();
+    } catch (_e) {}
+    throw error;
+  }
+});
 
 app.on("ready", async () => {
   try {

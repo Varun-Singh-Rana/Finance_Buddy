@@ -14,11 +14,11 @@
   },
   "dependencies": {
     "dotenv": "^16.4.5",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^6.0.1"
   },
   "devDependencies": {
     "electron": "latest",
-    "electron-builder": "latest"
+    "electron-builder": "^26.8.1"
   },
   "author": "Varun Singh Rana, Shreya Uniyal, Shashank Tomar",
   "license": "MIT",
