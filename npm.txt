@@ -1,0 +1,9 @@
+1. To install all npm in new folder:
+	npm install
+
+2. To fix vulnerabilities in packages
+	npm audit fix --force
+
+4: Test the App
+	npm start
+
