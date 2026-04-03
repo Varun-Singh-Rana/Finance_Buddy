@@ -1,0 +1,308 @@
+/* Components for FinLytics premium theme - scoped under .finlytics */
+
+/* Layout primitives used across pages */
+.app-container.finlytics,
+.finlytics .app-container {
+  display: flex;
+  min-height: 100vh;
+  gap: 0;
+  align-items: stretch;
+  background: transparent;
+}
+.finlytics .main {
+  flex: 1;
+  padding: 32px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.finlytics .main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.finlytics .page-title h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+.finlytics .page-title p {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+}
+.finlytics .header-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.titlebar {
+  z-index: 1200;
+}
+.finlytics .sidebar {
+  width: 240px;
+  padding: 32px 20px;
+  background: linear-gradient(
+    180deg,
+    rgba(7, 16, 38, 0.85),
+    rgba(4, 6, 18, 0.85)
+  );
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.finlytics .brand {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.finlytics .brand-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(
+    135deg,
+    var(--accent-primary),
+    var(--accent-teal)
+  );
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: #02130d;
+  box-shadow: 0 6px 20px rgba(0, 200, 150, 0.08);
+}
+.finlytics .brand-name {
+  font-weight: 600;
+  font-size: var(--fs-md);
+  color: var(--text-strong);
+}
+
+.finlytics .nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.finlytics .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition:
+    transform 0.12s ease,
+    background 0.12s ease,
+    color 0.12s ease;
+  font-weight: 600;
+}
+.finlytics .nav-link i {
+  width: 22px;
+  text-align: center;
+  color: var(--text-muted);
+}
+.finlytics .nav-link:hover {
+  transform: translateX(6px);
+  background: rgba(255, 255, 255, 0.01);
+  color: var(--text-strong);
+}
+.finlytics .nav-link.active {
+  color: var(--text-strong);
+  background: linear-gradient(
+    90deg,
+    rgba(0, 200, 150, 0.06),
+    rgba(255, 255, 255, 0.01)
+  );
+  box-shadow: var(--glow);
+  border-left: 3px solid var(--accent-primary);
+  padding-left: 10px;
+}
+
+.finlytics .stat-grid {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+}
+.finlytics .stat-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(255, 255, 255, 0.01)
+  );
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.finlytics .stat-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--glow);
+}
+.finlytics .stat-card h2 {
+  font-size: var(--fs-xl);
+  margin: 0;
+  color: var(--text-strong);
+}
+.finlytics .stat-card p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+.finlytics .stat-card.green {
+  border-left: 4px solid rgba(0, 200, 150, 0.14);
+}
+.finlytics .stat-card.red {
+  border-left: 4px solid rgba(255, 107, 107, 0.12);
+}
+.finlytics .stat-card.teal {
+  border-left: 4px solid rgba(0, 163, 255, 0.12);
+}
+
+.finlytics .pill {
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-strong);
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.02);
+  font-weight: 700;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.finlytics .pill.neutral {
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.finlytics .panel {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.016),
+    rgba(255, 255, 255, 0.01)
+  );
+  border: 1px solid var(--border);
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(2, 6, 16, 0.45);
+}
+.finlytics .panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.finlytics .panel h3 {
+  margin: 0;
+  font-size: var(--fs-md);
+  color: var(--text-strong);
+}
+.finlytics .chart-canvas {
+  width: 100% !important;
+  height: 220px !important;
+}
+
+.finlytics .btn-primary,
+.finlytics .btn-primary:visited {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.56rem 0.9rem;
+  border-radius: 10px;
+  background: linear-gradient(
+    90deg,
+    var(--accent-primary),
+    var(--accent-primary-600)
+  );
+  color: #02130d;
+  font-weight: 700;
+  border: none;
+  box-shadow: 0 8px 28px rgba(0, 200, 150, 0.12);
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.finlytics .btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px rgba(0, 200, 150, 0.14);
+}
+.finlytics .link-btn {
+  background: transparent;
+  border: none;
+  color: var(--accent-teal);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Page status / banners (centralized) */
+.finlytics .page-status {
+  margin: 0 0 20px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-strong);
+  font-size: 0.95rem;
+}
+.finlytics .page-status.info {
+  border-color: rgba(2, 194, 225, 0.18);
+  background: rgba(2, 194, 225, 0.06);
+  color: #a7edff;
+}
+.finlytics .page-status.error {
+  border-color: rgba(255, 95, 95, 0.24);
+  background: rgba(255, 95, 95, 0.08);
+  color: #ff9b9b;
+}
+.finlytics .page-status.success {
+  border-color: rgba(30, 200, 149, 0.18);
+  background: rgba(30, 200, 149, 0.06);
+  color: #86f5c6;
+}
+
+.finlytics .middle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+.finlytics .bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 16px;
+  margin-top: 16px;
+  align-items: start;
+}
+.finlytics .suggestion .icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--accent-violet), var(--accent-teal));
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(138, 125, 255, 0.08);
+  margin-right: 10px;
+}
+
+@media (max-width: 900px) {
+  .finlytics .middle-grid {
+    grid-template-columns: 1fr;
+  }
+  .finlytics .bottom-grid {
+    grid-template-columns: 1fr;
+  }
+  .finlytics .sidebar {
+    display: none;
+  }
+}

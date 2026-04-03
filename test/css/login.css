@@ -1,5 +1,10 @@
-* {
-  box-sizing: border-box;
+/* Tokens moved to theme.css; page-level styles below */
+
+body {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  background: radial-gradient(at top right, #132341, #081220);
+  color: var(--text);
 }
 
 .auth-body {
