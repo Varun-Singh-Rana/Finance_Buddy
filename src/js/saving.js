@@ -2,9 +2,8 @@ const database = require("../../electron/db");
 
 const dependencyError = database.dependencyError;
 
-const state = {
-  plans: [],
-};
+const state = { plans: [] };
+let editPlanId = null;
 
 const elements = {
   form: null,
@@ -19,8 +18,13 @@ const elements = {
   avatar: null,
   metricPlanCount: null,
   metricSavedAmount: null,
+  metricSavedMonth: null,
+  metricSavedLast: null,
   metricAverageProgress: null,
   metricSavedCaption: null,
+  modal: null,
+  addPlanBtn: null,
+  sparkline: null,
 };
 
 let currencyFormatter;
@@ -30,13 +34,37 @@ document.addEventListener("DOMContentLoaded", async () => {
   currencyFormatter = createCurrencyFormatter();
 
   elements.form?.addEventListener("submit", handleSubmit);
+  elements.list?.addEventListener("click", handlePlanListClick);
+
+  elements.addPlanBtn?.addEventListener("click", () => {
+    editPlanId = null;
+    elements.form?.reset();
+    const submit = elements.form?.querySelector("button[type='submit']");
+    if (submit) submit.textContent = "Save Plan";
+    openModal();
+  });
+
+  elements.modal?.addEventListener("click", (e) => {
+    const target = e.target;
+    if (
+      target &&
+      (target.dataset?.action === "close-modal" ||
+        target.classList.contains("modal-close"))
+    ) {
+      closeModal();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeModal();
+  });
 
   if (dependencyError) {
     showStatus(
       dependencyError.code === "MODULE_NOT_FOUND"
         ? "Missing dependency 'sqlite3'. Run `npm install` and restart Finlytics."
         : `Unable to load SQLite driver: ${dependencyError.message}`,
-      "error"
+      "error",
     );
     disableForm();
     return;
@@ -44,6 +72,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await loadProfile();
   await ensureSavingTable();
+  // Apply any pending monthly allocations (idempotent) before loading plans
+  try {
+    await performMonthlyAllocations();
+  } catch (err) {
+    console.warn("performMonthlyAllocations failed on startup", err);
+  }
   await refreshPlans();
 });
 
@@ -60,16 +94,202 @@ function cacheElements() {
   elements.avatar = document.getElementById("saving-avatar");
   elements.metricPlanCount = document.getElementById("metric-plan-count");
   elements.metricSavedAmount = document.getElementById("metric-saved-amount");
+  elements.metricSavedMonth = document.getElementById("metric-saved-month");
+  elements.metricSavedLast = document.getElementById("metric-saved-last");
+  elements.metricSavedTotal = document.getElementById("metric-saved-total");
+  elements.allocation = document.getElementById("plan-allocation");
   elements.metricAverageProgress = document.getElementById(
-    "metric-average-progress"
+    "metric-average-progress",
   );
   elements.metricSavedCaption = document.getElementById("metric-saved-caption");
+  elements.modal = document.getElementById("saving-modal");
+  elements.addPlanBtn = document.getElementById("add-plan-btn");
+  elements.sparkline = document.getElementById("saving-sparkline");
+}
+
+function clearStatus() {
+  if (!elements.status) return;
+  elements.status.textContent = "";
+  elements.status.classList.add("hidden");
+  elements.status.classList.remove("info", "error", "success");
+}
+
+function formatDateForSql(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+async function updateMonthlySaved() {
+  try {
+    const now = new Date();
+    const startWindow = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    const endWindow = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const res = await database.query(
+      `
+      SELECT substr(occurred_at,1,7) as ym,
+        COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS income,
+        COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS expense
+      FROM "transaction"
+      WHERE occurred_at >= ? AND occurred_at < ?
+      GROUP BY ym
+      ORDER BY ym ASC;
+    `,
+      [formatDateForSql(startWindow), formatDateForSql(endWindow)],
+    );
+
+    const rows = res.rows || [];
+    const map = {};
+    rows.forEach((r) => {
+      map[r.ym] = Number(r.income) - Number(r.expense);
+    });
+
+    const months = [];
+    for (let i = -5; i <= 0; i += 1) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      months.push(map[ym] || 0);
+    }
+
+    const thisMonth = months[months.length - 1] || 0;
+    const lastMonth = months[months.length - 2] || 0;
+    if (elements.metricSavedMonth)
+      elements.metricSavedMonth.textContent =
+        currencyFormatter.format(thisMonth);
+    if (elements.metricSavedLast)
+      elements.metricSavedLast.textContent =
+        currencyFormatter.format(lastMonth);
+    const total = months.reduce((s, v) => s + v, 0);
+    if (elements.metricSavedTotal)
+      elements.metricSavedTotal.textContent = currencyFormatter.format(total);
+    drawSparkline(months);
+  } catch (err) {
+    console.warn("updateMonthlySaved error", err);
+  }
+}
+
+function drawSparkline(values) {
+  const svg = elements.sparkline;
+  if (!svg) return;
+  const width = Number(svg.getAttribute("width")) || 140;
+  const height = Number(svg.getAttribute("height")) || 40;
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  if (!values || !values.length) return;
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const range = max - min || 1;
+  const pad = 6;
+  const step = (width - pad * 2) / Math.max(1, values.length - 1);
+
+  const points = values.map((v, i) => {
+    const x = pad + i * step;
+    const y = pad + (1 - (v - min) / range) * (height - pad * 2);
+    return `${x},${y}`;
+  });
+
+  const ns = "http://www.w3.org/2000/svg";
+  const poly = document.createElementNS(ns, "polyline");
+  poly.setAttribute("fill", "none");
+  poly.setAttribute("stroke", "var(--accent)");
+  poly.setAttribute("stroke-width", "2");
+  poly.setAttribute("points", points.join(" "));
+  svg.appendChild(poly);
+
+  const last = points[points.length - 1].split(",");
+  const circle = document.createElementNS(ns, "circle");
+  circle.setAttribute("cx", last[0]);
+  circle.setAttribute("cy", last[1]);
+  circle.setAttribute("r", "2.5");
+  circle.setAttribute("fill", "var(--accent)");
+  svg.appendChild(circle);
+}
+
+async function handlePlanListClick(event) {
+  const target = event.target.closest("[data-action]");
+  if (!target) return;
+  const action = target.dataset.action;
+  const id = Number(target.dataset.id || "");
+  if (!Number.isFinite(id)) return;
+  const plan = state.plans.find((p) => p.id === id);
+  if (!plan) return;
+
+  switch (action) {
+    case "delete": {
+      const confirmed = window.confirm(`Delete ${plan.title}?`);
+      if (!confirmed) return;
+      await deletePlan(id);
+      break;
+    }
+    case "edit": {
+      editPlanId = id;
+      if (elements.title) elements.title.value = plan.title;
+      if (elements.category) elements.category.value = plan.category;
+      if (elements.target) elements.target.value = String(plan.target);
+      if (elements.saved) elements.saved.value = String(plan.saved);
+      if (elements.note) elements.note.value = plan.note || "";
+      if (elements.allocation)
+        elements.allocation.value = String(plan.allocation || 0);
+      const submit = elements.form?.querySelector("button[type='submit']");
+      if (submit) submit.textContent = "Save Changes";
+      openModal();
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+async function updatePlan(id, payload) {
+  try {
+    await database.query(
+      `UPDATE saving_plan SET title = ?, category = ?, target_amount = ?, saved_amount = ?, allocation_pct = ?, note = NULLIF(?, '') WHERE id = ?;`,
+      [
+        payload.title,
+        payload.category,
+        payload.target,
+        payload.saved,
+        payload.allocation || 0,
+        payload.note || "",
+        id,
+      ],
+    );
+    editPlanId = null;
+    if (elements.form) elements.form.reset();
+    const submit = elements.form?.querySelector("button[type='submit']");
+    if (submit) submit.textContent = "Save Plan";
+    await refreshPlans();
+    closeModal();
+  } catch (err) {
+    console.error("Finlytics savings: update failed", err);
+    showStatus(
+      `Unable to update plan: ${database.normalizeDbError(err)}`,
+      "error",
+    );
+  }
+}
+
+async function deletePlan(id) {
+  try {
+    await database.query("DELETE FROM saving_plan WHERE id = ?;", [id]);
+    await refreshPlans();
+  } catch (err) {
+    console.error("Finlytics savings: delete failed", err);
+    showStatus(
+      `Unable to delete plan: ${database.normalizeDbError(err)}`,
+      "error",
+    );
+  }
 }
 
 function disableForm() {
   Array.from(elements.form?.elements || []).forEach((input) => {
     input.setAttribute("disabled", "disabled");
   });
+  if (elements.addPlanBtn)
+    elements.addPlanBtn.setAttribute("disabled", "disabled");
 }
 
 async function loadProfile() {
@@ -95,18 +315,151 @@ async function ensureSavingTable() {
       category TEXT,
       target_amount REAL NOT NULL CHECK (target_amount >= 0),
       saved_amount REAL NOT NULL CHECK (saved_amount >= 0),
+      allocation_pct REAL NOT NULL DEFAULT 0,
       note TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
   `);
+  // Create allocation log tables to record monthly distributions
+  await database.query(`
+    CREATE TABLE IF NOT EXISTS allocation_log (
+      month TEXT PRIMARY KEY,
+      total REAL NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  await database.query(`
+    CREATE TABLE IF NOT EXISTS allocation_item (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      month TEXT NOT NULL,
+      plan_id INTEGER NOT NULL,
+      amount REAL NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+  // Ensure allocation_pct exists for older DBs
+  try {
+    const info = await database.query("PRAGMA table_info(saving_plan);");
+    const cols = info.rows || info || [];
+    const hasAlloc = cols.some(
+      (c) => c && (c.name === "allocation_pct" || c.name === "allocationPct"),
+    );
+    if (!hasAlloc) {
+      await database.query(
+        "ALTER TABLE saving_plan ADD COLUMN allocation_pct REAL DEFAULT 0;",
+      );
+    }
+  } catch (__err) {
+    console.warn(
+      "Could not migrate saving_plan table to add allocation_pct column",
+      __err,
+    );
+  }
+}
+
+// Distribute monthly savings into plans according to each plan's allocation_pct.
+// This function is idempotent per-month by recording processed months in
+// `allocation_log`/`allocation_item` tables.
+async function performMonthlyAllocations() {
+  try {
+    // Find the last month we processed (YYYY-MM)
+    const lastRes = await database.query(
+      "SELECT MAX(month) AS last_month FROM allocation_log;",
+    );
+    const lastMonth =
+      (lastRes.rows && lastRes.rows[0] && lastRes.rows[0].last_month) || null;
+
+    const now = new Date();
+    // The most-recent completed month is the month before the current month
+    const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevMonthStr = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, "0")}`;
+
+    const monthsToProcess = [];
+    // Helper to add one month to YYYY-MM
+    const addOneMonth = (mStr) => {
+      const [y, mo] = (mStr || "").split("-").map((v) => Number(v));
+      if (!Number.isFinite(y) || !Number.isFinite(mo)) return null;
+      const d = new Date(y, mo - 1 + 1, 1);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    };
+
+    if (!lastMonth) {
+      monthsToProcess.push(prevMonthStr);
+    } else {
+      let next = addOneMonth(lastMonth);
+      while (next && next <= prevMonthStr) {
+        monthsToProcess.push(next);
+        next = addOneMonth(next);
+      }
+    }
+
+    if (!monthsToProcess.length) return;
+
+    for (const month of monthsToProcess) {
+      // compute net savings for that month (income - expense)
+      const totals = await database.query(
+        `
+        SELECT
+          COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS income,
+          COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS expense
+        FROM "transaction"
+        WHERE substr(occurred_at,1,7) = ?;
+      `,
+        [month],
+      );
+
+      const row = (totals.rows && totals.rows[0]) || { income: 0, expense: 0 };
+      const net = toNumber(row.income) - toNumber(row.expense);
+
+      // Record the month so we don't process it again. We record even zero/negative
+      // totals so the month is considered processed.
+      await database.query(
+        "INSERT INTO allocation_log(month, total, created_at) VALUES(?, ?, ?);",
+        [month, net, new Date().toISOString()],
+      );
+
+      if (net <= 0) {
+        // nothing to distribute
+        continue;
+      }
+
+      // Get plans with allocations
+      const plansRes = await database.query(
+        "SELECT id, IFNULL(allocation_pct, 0) AS allocation_pct FROM saving_plan WHERE IFNULL(allocation_pct,0) > 0;",
+      );
+      const plans = plansRes.rows || [];
+
+      for (const p of plans) {
+        const pct = toNumber(p.allocation_pct);
+        if (pct <= 0) continue;
+        const amount = Number((net * (pct / 100)).toFixed(2));
+        if (amount <= 0) continue;
+
+        // Add amount to plan's saved_amount and record an allocation item
+        await database.query(
+          "UPDATE saving_plan SET saved_amount = saved_amount + ? WHERE id = ?;",
+          [amount, p.id],
+        );
+        await database.query(
+          "INSERT INTO allocation_item(month, plan_id, amount, created_at) VALUES(?, ?, ?, ?);",
+          [month, p.id, amount, new Date().toISOString()],
+        );
+      }
+
+      showStatus(`Applied saving allocations for ${month}.`, "success");
+    }
+  } catch (err) {
+    console.warn("performMonthlyAllocations error", err);
+  }
 }
 
 async function refreshPlans() {
   try {
     const result = await database.query(
-      `SELECT id, title, category, target_amount, saved_amount, note, created_at
+      `SELECT id, title, category, target_amount, saved_amount, IFNULL(allocation_pct, 0) AS allocation_pct, note, created_at
        FROM saving_plan
-       ORDER BY created_at DESC, id DESC;`
+       ORDER BY created_at DESC, id DESC;`,
     );
     state.plans = (result.rows || []).map((row) => ({
       id: row.id,
@@ -114,6 +467,7 @@ async function refreshPlans() {
       category: row.category || "General",
       target: toNumber(row.target_amount),
       saved: toNumber(row.saved_amount),
+      allocation: toNumber(row.allocation_pct),
       note: row.note || "",
       created: row.created_at,
     }));
@@ -121,17 +475,17 @@ async function refreshPlans() {
     renderPlans();
     showStatus(
       state.plans.length
-        ? `Tracking ${state.plans.length} plan${
-            state.plans.length === 1 ? "" : "s"
-          }.`
+        ? `Tracking ${state.plans.length} plan${state.plans.length === 1 ? "" : "s"}.`
         : "No saving plans yet. Add one above to get started.",
-      state.plans.length ? "success" : "info"
+      state.plans.length ? "success" : "info",
     );
+    setTimeout(() => clearStatus(), 3000);
+    await updateMonthlySaved();
   } catch (error) {
     console.error("Finlytics savings: load failed", error);
     showStatus(
       `Unable to load saving plans: ${database.normalizeDbError(error)}`,
-      "error"
+      "error",
     );
   }
 }
@@ -145,6 +499,10 @@ async function handleSubmit(event) {
     target: toNumber(elements.target?.value),
     saved: toNumber(elements.saved?.value),
     note: elements.note?.value.trim() || null,
+    allocation: Math.max(
+      0,
+      Math.min(100, toNumber(elements.allocation?.value)),
+    ),
   };
 
   if (!payload.title) {
@@ -158,36 +516,38 @@ async function handleSubmit(event) {
   }
 
   try {
-    await database.query(
-      `INSERT INTO saving_plan (title, category, target_amount, saved_amount, note)
-       VALUES (?, ?, ?, ?, NULLIF(?, ''));`,
-      [
-        payload.title,
-        payload.category,
-        payload.target,
-        payload.saved,
-        payload.note,
-      ]
-    );
+    if (editPlanId) {
+      await updatePlan(editPlanId, payload);
+    } else {
+      await database.query(
+        `INSERT INTO saving_plan (title, category, target_amount, saved_amount, allocation_pct, note)
+         VALUES (?, ?, ?, ?, ?, NULLIF(?, ''));`,
+        [
+          payload.title,
+          payload.category,
+          payload.target,
+          payload.saved,
+          payload.allocation || 0,
+          payload.note,
+        ],
+      );
 
-    elements.form?.reset();
-    if (elements.saved) {
-      elements.saved.value = "0";
+      elements.form?.reset();
+      if (elements.saved) elements.saved.value = "0";
+      await refreshPlans();
+      closeModal();
     }
-    await refreshPlans();
   } catch (error) {
     console.error("Finlytics savings: insert failed", error);
     showStatus(
       `Unable to save plan: ${database.normalizeDbError(error)}`,
-      "error"
+      "error",
     );
   }
 }
 
 function renderPlans() {
-  if (!elements.list) {
-    return;
-  }
+  if (!elements.list) return;
 
   if (!state.plans.length) {
     elements.list.innerHTML = `<p class="plan-meta">Add a plan to see it here.</p>`;
@@ -205,15 +565,18 @@ function renderPlans() {
           ? `Left ${currencyFormatter.format(remaining)}`
           : "Goal ready";
       return `
-        <article class="plan-card" data-id="${
-          plan.id
-        }" style="--plan-accent:${accent};">
+        <article class="plan-card" data-id="${plan.id}" style="--plan-accent:${accent};">
           <header>
             <div>
-              <h3>${escapeHtml(plan.title)}</h3>
               <p class="plan-meta">${escapeHtml(plan.category)}</p>
             </div>
-            <span class="progress-pill">${percent}%</span>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="plan-actions">
+                <button type="button" class="plan-action" data-action="edit" data-id="${plan.id}" title="Edit plan"><i class="fas fa-pen" aria-hidden="true"></i></button>
+                <button type="button" class="plan-action" data-action="delete" data-id="${plan.id}" title="Delete plan"><i class="fas fa-trash" aria-hidden="true"></i></button>
+              </div>
+              <span class="progress-pill">${percent}%</span>
+            </div>
           </header>
           <div class="plan-progress" role="progressbar" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100">
             <div class="plan-track">
@@ -221,30 +584,22 @@ function renderPlans() {
             </div>
           </div>
           <div class="plan-stats">
-            <span><strong>${currencyFormatter.format(
-              plan.saved
-            )}</strong> saved</span>
+            <span><strong>${currencyFormatter.format(plan.saved)}</strong> saved</span>
             <span>of ${currencyFormatter.format(plan.target)}</span>
           </div>
-          ${
-            plan.note ? `<p class="plan-note">${escapeHtml(plan.note)}</p>` : ""
-          }
+          ${plan.note ? `<p class="plan-note">${escapeHtml(plan.note)}</p>` : ""}
           <footer class="plan-foot">
-            <span><i class="fas fa-calendar-alt" aria-hidden="true"></i>${formatDate(
-              plan.created
-            )}</span>
+            <span><i class="fas fa-calendar-alt" aria-hidden="true"></i>${formatDate(plan.created)}</span>
             <span><i class="fas fa-coins" aria-hidden="true"></i>${remainingLabel}</span>
+            <span><i class="fas fa-percent" aria-hidden="true"></i> ${plan.allocation}%</span>
           </footer>
         </article>
       `;
     })
     .join("");
 }
-
 function updateMetrics() {
-  if (!currencyFormatter) {
-    return;
-  }
+  if (!currencyFormatter) return;
 
   const totals = state.plans.reduce(
     (acc, plan) => {
@@ -253,42 +608,36 @@ function updateMetrics() {
       acc.ratioSum += plan.target > 0 ? plan.saved / plan.target : 0;
       return acc;
     },
-    { saved: 0, target: 0, ratioSum: 0 }
+    { saved: 0, target: 0, ratioSum: 0 },
   );
 
   let weightedProgress = 0;
   if (totals.target > 0) {
     weightedProgress = Math.round(
-      Math.min((totals.saved / totals.target) * 100, 100)
+      Math.min((totals.saved / totals.target) * 100, 100),
     );
   } else if (state.plans.length) {
     weightedProgress = Math.round(
-      Math.min((totals.ratioSum / state.plans.length) * 100, 100)
+      Math.min((totals.ratioSum / state.plans.length) * 100, 100),
     );
   }
 
-  if (elements.metricPlanCount) {
+  if (elements.metricPlanCount)
     elements.metricPlanCount.textContent = state.plans.length;
-  }
-  if (elements.metricSavedAmount) {
+  if (elements.metricSavedAmount)
     elements.metricSavedAmount.textContent = currencyFormatter.format(
-      totals.saved
+      totals.saved,
     );
-  }
-  if (elements.metricSavedCaption) {
+  if (elements.metricSavedCaption)
     elements.metricSavedCaption.textContent = totals.target
       ? `of ${currencyFormatter.format(totals.target)} across goals`
       : "Across all plans";
-  }
-  if (elements.metricAverageProgress) {
+  if (elements.metricAverageProgress)
     elements.metricAverageProgress.textContent = `${weightedProgress}%`;
-  }
 }
 
 function showStatus(message, variant = "info") {
-  if (!elements.status) {
-    return;
-  }
+  if (!elements.status) return;
   elements.status.textContent = message;
   elements.status.classList.remove("hidden", "info", "error", "success");
   elements.status.classList.add(variant);
@@ -331,15 +680,9 @@ function escapeHtml(value) {
 }
 
 function formatDate(value) {
-  if (!value) {
-    return "just now";
-  }
-
+  if (!value) return "just now";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return escapeHtml(value);
-  }
-
+  if (Number.isNaN(date.getTime())) return escapeHtml(value);
   try {
     return new Intl.DateTimeFormat(getLocale(), {
       day: "2-digit",
@@ -360,22 +703,39 @@ function getPlanAccent(plan) {
     "hsl(335, 74%, 68%)",
   ];
   const key = `${plan.category || ""}|${plan.title || ""}`.toLowerCase();
-  if (!key) {
-    return "var(--accent)";
-  }
+  if (!key) return "var(--accent)";
   let score = 0;
-  for (let index = 0; index < key.length; index += 1) {
-    score = (score + key.charCodeAt(index)) % palette.length;
-  }
+  for (let i = 0; i < key.length; i += 1)
+    score = (score + key.charCodeAt(i)) % palette.length;
   return palette[score];
 }
 
+function openModal() {
+  if (!elements.modal) return;
+  elements.modal.classList.remove("hidden");
+  elements.modal.setAttribute("aria-hidden", "false");
+  setTimeout(() => {
+    const focusElem =
+      elements.title || elements.form?.querySelector("input, textarea, button");
+    if (focusElem) focusElem.focus();
+  }, 40);
+}
+
+function closeModal() {
+  if (!elements.modal) return;
+  elements.modal.classList.add("hidden");
+  elements.modal.setAttribute("aria-hidden", "true");
+  if (elements.form) {
+    elements.form.reset();
+    const submit = elements.form.querySelector("button[type='submit']");
+    if (submit) submit.textContent = "Save Plan";
+  }
+  editPlanId = null;
+}
+
 function getLocale() {
-  if (process.env.FINLYTICS_LOCALE) {
-    return process.env.FINLYTICS_LOCALE;
-  }
-  if (typeof navigator !== "undefined" && navigator.language) {
+  if (process.env.FINLYTICS_LOCALE) return process.env.FINLYTICS_LOCALE;
+  if (typeof navigator !== "undefined" && navigator.language)
     return navigator.language;
-  }
   return "en-IN";
 }

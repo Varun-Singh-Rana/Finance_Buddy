@@ -91,13 +91,74 @@
             <p id="saving-greeting">Plan smarter, save faster.</p>
           </div>
           <div class="header-actions">
+            <button id="add-plan-btn" class="btn-primary btn-compact">
+              + Add Saving Plan
+            </button>
             <div class="avatar" id="saving-avatar">F</div>
           </div>
         </header>
 
         <div id="saving-status" class="page-status hidden"></div>
+        <!-- Top: insights (focus of the page) -->
+        <section class="insights-section" aria-label="Savings insights">
+          <div class="insights-grid">
+            <article class="insight-card small">
+              <div class="insight-heading">
+                <h3>Total (6m)</h3>
+              </div>
+              <div class="insight-body">
+                <div class="insight-details">
+                  <div class="insight-savings" id="metric-saved-total">₹0</div>
+                  <p class="insight-caption">Sum of the last 6 months</p>
+                </div>
+              </div>
+            </article>
+            <article class="insight-card small">
+              <div class="insight-heading">
+                <h3>This month</h3>
+              </div>
+              <div class="insight-body">
+                <div class="insight-details">
+                  <div class="insight-savings" id="metric-saved-month">₹0</div>
+                  <p class="insight-caption">
+                    Net savings (income − expenses) this month
+                  </p>
+                </div>
+              </div>
+            </article>
 
-        <section class="advisor-overview" aria-label="Savings summary">
+            <article class="insight-card small">
+              <div class="insight-heading">
+                <h3>Last month</h3>
+              </div>
+              <div class="insight-body">
+                <div class="insight-details">
+                  <div class="insight-savings" id="metric-saved-last">₹0</div>
+                  <p class="insight-caption">Net savings last month</p>
+                </div>
+              </div>
+            </article>
+
+            <article class="insight-card small trend-card">
+              <div class="insight-heading">
+                <h3>Trend</h3>
+              </div>
+              <div class="insight-body">
+                <div class="insight-details">
+                  <svg
+                    id="saving-sparkline"
+                    width="140"
+                    height="40"
+                    aria-hidden="true"
+                  ></svg>
+                  <p class="insight-caption">Last 6 months</p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="advisor-overview compact" aria-label="Savings summary">
           <div class="overview-content">
             <div class="overview-icon" aria-hidden="true">
               <i class="fas fa-piggy-bank"></i>
@@ -122,6 +183,7 @@
                 <strong id="metric-saved-amount">₹0</strong>
                 <small id="metric-saved-caption">Across all plans</small>
               </article>
+              <!-- 'Saved This Month' is now displayed above in Insights -->
               <article class="metric-card" role="listitem">
                 <span class="metric-label">Average progress</span>
                 <strong id="metric-average-progress">0%</strong>
@@ -130,8 +192,38 @@
             </div>
           </div>
         </section>
+        <!-- Inline form removed from main page. Use + Add Saving Plan to open modal. -->
 
-        <section class="plan-form" aria-labelledby="planFormTitle">
+        <section class="plans-section" aria-labelledby="plansListTitle">
+          <div class="section-header">
+            <div>
+              <h2 id="plansListTitle">Your saving plans</h2>
+              <p>Goals load from the Saving Plan table.</p>
+            </div>
+          </div>
+          <div id="plan-list" class="plan-grid"></div>
+        </section>
+
+        <noscript>
+          <p class="noscript-message">
+            Enable JavaScript to view personalized savings insights.
+          </p>
+        </noscript>
+      </main>
+    </div>
+    <script src="../js/window-controls.js"></script>
+    <!-- Modal form markup (keeps same IDs so existing JS works) -->
+    <div id="saving-modal" class="modal hidden" aria-hidden="true">
+      <div class="modal-overlay" data-action="close-modal"></div>
+      <div class="modal-dialog" role="dialog" aria-labelledby="planFormTitle">
+        <button
+          class="modal-close"
+          data-action="close-modal"
+          aria-label="Close"
+        >
+          ×
+        </button>
+        <div class="modal-content">
           <div class="section-header">
             <div>
               <h2 id="planFormTitle">Create a saving plan</h2>
@@ -157,6 +249,19 @@
                 type="text"
                 maxlength="40"
                 placeholder="Emergency, Vacation…"
+              />
+            </label>
+            <label>
+              <span>Allocation (%)</span>
+              <input
+                id="plan-allocation"
+                name="allocation"
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value="0"
+                placeholder="Percent of monthly savings"
               />
             </label>
             <label>
@@ -191,28 +296,21 @@
                 placeholder="Why are you saving for this?"
               ></textarea>
             </label>
-            <button class="btn-primary" type="submit">Save Plan</button>
-          </form>
-        </section>
-
-        <section class="plans-section" aria-labelledby="plansListTitle">
-          <div class="section-header">
-            <div>
-              <h2 id="plansListTitle">Your saving plans</h2>
-              <p>Goals load from the Saving Plan table.</p>
+            <div style="display: flex; gap: 10px; align-items: center">
+              <button class="btn-primary" type="submit">Save Plan</button>
+              <button
+                type="button"
+                class="btn-secondary"
+                data-action="close-modal"
+              >
+                Cancel
+              </button>
             </div>
-          </div>
-          <div id="plan-list" class="plan-grid"></div>
-        </section>
-
-        <noscript>
-          <p class="noscript-message">
-            Enable JavaScript to view personalized savings insights.
-          </p>
-        </noscript>
-      </main>
+          </form>
+        </div>
+      </div>
     </div>
-    <script src="../js/window-controls.js"></script>
+
     <script src="../js/saving.js"></script>
   </body>
 </html>
