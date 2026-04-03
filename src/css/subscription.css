@@ -575,6 +575,37 @@ button {
   color: #ffc7c7;
 }
 
+/* Edit and pause button styles */
+.edit-btn {
+  border-color: rgba(58, 160, 255, 0.24);
+  background: rgba(58, 160, 255, 0.06);
+  color: #9ad7ff;
+}
+.edit-btn:hover {
+  border-color: rgba(58, 160, 255, 0.48);
+  color: #dff6ff;
+}
+.pause-btn {
+  border-color: rgba(255, 184, 75, 0.24);
+  background: rgba(255, 184, 75, 0.06);
+  color: #ffd9a6;
+}
+.pause-btn:hover {
+  border-color: rgba(255, 184, 75, 0.48);
+  color: #fff1dc;
+}
+
+/* Visual for paused subscriptions */
+.subscription-card.paused {
+  opacity: 0.72;
+  filter: grayscale(0.05);
+}
+.badge.paused-badge {
+  background: rgba(255, 184, 75, 0.12);
+  color: #ffd9a6;
+  border: 1px solid rgba(255, 184, 75, 0.18);
+}
+
 .empty-state {
   margin: 32px auto 0;
   padding: 56px 32px;

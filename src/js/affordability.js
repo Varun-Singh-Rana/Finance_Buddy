@@ -117,7 +117,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   } catch (error) {
     console.warn(
       "Finlytics affordability: falling back to INR currency format:",
-      error.message
+      error.message,
     );
     currencyFormatter = new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -206,23 +206,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     setOverviewValue(
       elements.overviewExpenses,
       state.monthlyExpenses,
-      "expense"
+      "expense",
     );
     setOverviewValue(
       elements.overviewSubscriptions,
       state.subscriptionMonthly,
-      "expense"
+      "expense",
     );
     setOverviewValue(elements.overviewSavings, state.monthlySavings, "savings");
     setOverviewValue(
       elements.availableForPurchase,
       state.availableForPurchase,
-      "income"
+      "income",
     );
     setOverviewValue(
       elements.safeMonthlyAllocation,
       state.safeMonthlyAllocation,
-      "info"
+      "info",
     );
 
     if (elements.overviewLastUpdated) {
@@ -281,13 +281,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (ratio > 1) {
       elements.savingsProgress.classList.add("over-limit");
       elements.savingsProgressLabel.textContent = `${descriptor} exceeds your safe budget by ${percentFormatter.format(
-        ratio - 1
+        ratio - 1,
       )}.`;
     } else if (ratio === 0) {
       elements.savingsProgressLabel.textContent = "No plan selected yet.";
     } else {
       elements.savingsProgressLabel.textContent = `${descriptor} uses ${percentFormatter.format(
-        ratio
+        ratio,
       )} of your safe allocation.`;
     }
   }
@@ -305,10 +305,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     elements.resultContainer?.classList.remove(
       "hidden",
       "negative",
-      "positive"
+      "positive",
     );
     elements.resultContainer?.classList.add(
-      affordable ? "positive" : "negative"
+      affordable ? "positive" : "negative",
     );
 
     if (elements.resultStatus) {
@@ -326,7 +326,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     if (elements.resultTotalCost) {
       elements.resultTotalCost.textContent = `Total cost: ${formatCurrency(
-        totalCost
+        totalCost,
       )}`;
     }
 
@@ -337,12 +337,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       const safeLimit = safeBudget;
       if (elements.resultSavingsImpact) {
         elements.resultSavingsImpact.textContent = `${formatCurrency(
-          amount
+          amount,
         )} upfront`;
       }
       if (elements.resultImpactDetail) {
         elements.resultImpactDetail.textContent = `Safe limit: ${formatCurrency(
-          safeLimit
+          safeLimit,
         )}`;
       }
       if (elements.resultRecommendation) {
@@ -374,12 +374,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       const safeAllocation = safeBudget;
       if (elements.resultSavingsImpact) {
         elements.resultSavingsImpact.textContent = `${formatCurrency(
-          monthlyPayment
+          monthlyPayment,
         )} per month`;
       }
       if (elements.resultImpactDetail) {
         elements.resultImpactDetail.textContent = `Safe allocation: ${formatCurrency(
-          safeAllocation
+          safeAllocation,
         )}`;
       }
       if (elements.resultRecommendation) {
@@ -412,7 +412,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const deltaText =
       difference >= 0
         ? `You will have ${formatCurrency(
-            difference
+            difference,
           )} remaining in your safe allocation.`
         : `You exceed the safe allocation by ${differenceFormatted}.`;
     if (elements.resultMonthlyDetail) {
@@ -421,7 +421,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           ? plan.months === 1
             ? `One-time payment of ${formatCurrency(amount)}. ${deltaText}`
             : `${plan.months} instalments of ${formatCurrency(
-                monthlyPayment
+                monthlyPayment,
               )}. ${deltaText}`
           : "Increase your savings before committing to this plan.";
     }
@@ -440,7 +440,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!amount || Number.isNaN(amount) || amount <= 0) {
       showFeedback(
         "Please enter a purchase amount greater than zero.",
-        "negative"
+        "negative",
       );
       elements.resultContainer?.classList.add("hidden");
       updateProgress(0, "This plan");
@@ -508,7 +508,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (error) {
       console.warn(
         "Finlytics affordability: unable to load user profile",
-        error
+        error,
       );
     }
   }
@@ -523,7 +523,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.error("Finlytics affordability: snapshot failed", error);
       showFeedback(
         `Unable to load your finances: ${database.normalizeDbError(error)}`,
-        "negative"
+        "negative",
       );
     }
   }
@@ -545,13 +545,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         FROM "transaction"
         WHERE occurred_at >= ? AND occurred_at < ?;
       `,
-        [formatDateForSql(start), formatDateForSql(end)]
+        [formatDateForSql(start), formatDateForSql(end)],
       ),
       database.query(
         `
         SELECT amount, billing_cycle
-        FROM subscriptions;
-      `
+        FROM subscriptions
+        WHERE IFNULL(is_paused, 0) = 0;
+      `,
       ),
     ]);
 
@@ -562,7 +563,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       (accumulator, row) =>
         accumulator +
         convertSubscriptionToMonthly(row.amount, row.billing_cycle),
-      0
+      0,
     );
 
     const monthlyExpenses = transactionExpenses + subscriptionMonthly;
@@ -596,6 +597,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         amount REAL NOT NULL CHECK (amount >= 0),
         billing_cycle TEXT NOT NULL,
         next_billing_date TEXT NOT NULL,
+        is_paused INTEGER DEFAULT 0,
         notes TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       );
@@ -621,7 +623,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (!hasIncome && !hasCosts) {
       showFeedback(
-        "Add income, expenses, or subscriptions to personalize affordability insights."
+        "Add income, expenses, or subscriptions to personalize affordability insights.",
       );
       updateProgress(0, "This plan");
       return;
@@ -630,7 +632,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (snapshot.safeMonthlyAllocation <= 0 || snapshot.safeUpfrontLimit <= 0) {
       showFeedback(
         "Your current savings are at or below zero. Add income or trim expenses to unlock purchase recommendations.",
-        "negative"
+        "negative",
       );
       updateProgress(Infinity, "This plan");
       return;
@@ -668,7 +670,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       dependencyError.code === "MODULE_NOT_FOUND"
         ? "Missing dependency 'sqlite3'. Run `npm install` and restart Finlytics."
         : `Unable to load SQLite driver: ${dependencyError.message}`,
-      "negative"
+      "negative",
     );
     disableForm();
     return;

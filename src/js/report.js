@@ -657,6 +657,7 @@ async function generatePdf(report) {
           amount REAL NOT NULL CHECK (amount >= 0),
           billing_cycle TEXT NOT NULL,
           next_billing_date TEXT NOT NULL,
+          is_paused INTEGER DEFAULT 0,
           notes TEXT,
           created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
@@ -668,6 +669,7 @@ async function generatePdf(report) {
       const subRes = await database.query(
         `SELECT id, name, category, amount, billing_cycle, next_billing_date, notes
          FROM subscriptions
+         WHERE IFNULL(is_paused, 0) = 0
          ORDER BY name;`,
       );
       subscriptions = (subRes.rows || []).map((r) => ({

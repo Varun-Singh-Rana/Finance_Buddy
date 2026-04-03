@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       dependencyError.code === "MODULE_NOT_FOUND"
         ? "Missing dependency 'sqlite3'. Run `npm install` inside the project folder and restart Finlytics."
         : `Unable to load SQLite driver: ${dependencyError.message}`,
-      "error"
+      "error",
     );
     return;
   }
@@ -110,13 +110,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       state.history = history;
 
       const hasRecordedActivity = history.some(
-        (item) => item.income > 0 || item.expense > 0
+        (item) => item.income > 0 || item.expense > 0,
       );
 
       if (!hasRecordedActivity) {
         showStatus(
           "Add transactions and subscriptions to unlock personalized forecasts.",
-          "info"
+          "info",
         );
         return;
       }
@@ -139,7 +139,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.error("Finlytics forecast: unable to load data", error);
       showStatus(
         `Unable to load forecast data: ${database.normalizeDbError(error)}`,
-        "error"
+        "error",
       );
     }
   }
@@ -160,7 +160,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const rangeStart = formatDateForSql(months[0].startDate);
     const rangeEnd = formatDateForSql(
-      new Date(now.getFullYear(), now.getMonth() + 1, 1)
+      new Date(now.getFullYear(), now.getMonth() + 1, 1),
     );
 
     const result = await database.query(
@@ -174,7 +174,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         GROUP BY period
         ORDER BY period;
       `,
-      [rangeStart, rangeEnd]
+      [rangeStart, rangeEnd],
     );
 
     (result.rows || []).forEach((row) => {
@@ -208,11 +208,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       const pointDate = new Date(
         anchorDate.getFullYear(),
         anchorDate.getMonth() + step,
-        1
+        1,
       );
       previousExpense = Math.max(
         0,
-        roundCurrency(previousExpense + expenseDelta)
+        roundCurrency(previousExpense + expenseDelta),
       );
       previousIncome = Math.max(0, roundCurrency(previousIncome + incomeDelta));
       forecast.push({
@@ -239,15 +239,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       new Date(
         currentPeriod.startDate.getFullYear(),
         currentPeriod.startDate.getMonth() - 1,
-        1
-      )
+        1,
+      ),
     );
     const periodEnd = formatDateForSql(
       new Date(
         currentPeriod.startDate.getFullYear(),
         currentPeriod.startDate.getMonth() + 1,
-        1
-      )
+        1,
+      ),
     );
 
     const categoryResult = await database.query(
@@ -262,7 +262,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           AND occurred_at < ?
         GROUP BY category, period;
       `,
-      [periodStart, periodEnd]
+      [periodStart, periodEnd],
     );
 
     const categoryMap = new Map();
@@ -282,8 +282,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     const subscriptionResult = await database.query(
       `
         SELECT category, amount, billing_cycle
-        FROM subscriptions;
-      `
+        FROM subscriptions
+        WHERE IFNULL(is_paused, 0) = 0;
+      `,
     );
 
     (subscriptionResult.rows || []).forEach((row) => {
@@ -291,7 +292,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const totals = categoryMap.get(name) || { current: 0, previous: 0 };
       const monthly = convertSubscriptionToMonthly(
         toNumber(row.amount),
-        row.billing_cycle
+        row.billing_cycle,
       );
       totals.current += monthly;
       totals.previous += monthly;
@@ -331,7 +332,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       state.incomeSeries.push(roundCurrency(month.income));
       state.actualExpenseSeries.push(roundCurrency(month.expense));
       state.forecastExpenseSeries.push(
-        index === history.length - 1 ? roundCurrency(month.expense) : null
+        index === history.length - 1 ? roundCurrency(month.expense) : null,
       );
     });
 
@@ -359,8 +360,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       lastActual > 0
         ? ((projectedFinal - lastActual) / lastActual) * 100
         : projectedFinal > 0
-        ? 100
-        : 0;
+          ? 100
+          : 0;
     return {
       actualChangePct,
       projectedChangePct,
@@ -385,8 +386,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       lastActual > 0
         ? ((projectedFinal - lastActual) / lastActual) * 100
         : projectedFinal > 0
-        ? 100
-        : 0;
+          ? 100
+          : 0;
     return {
       actualChangePct,
       projectedChangePct,
@@ -600,18 +601,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const rangeCell = document.createElement("td");
       rangeCell.innerHTML = `${currencyFormatter.format(
-        item.current
+        item.current,
       )} → ${currencyFormatter.format(
-        item.forecast
+        item.forecast,
       )} <span class="range-text">${percentFormatter.format(
-        item.changePct / 100
+        item.changePct / 100,
       )}</span>`;
 
       const pillCell = document.createElement("td");
       const pill = document.createElement("span");
       pill.classList.add(
         "trend-pill",
-        changePositive ? "positive" : "negative"
+        changePositive ? "positive" : "negative",
       );
       pill.innerHTML = `
         <i class="fas ${changePositive ? "fa-arrow-down" : "fa-arrow-up"}"></i>
@@ -622,13 +623,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       const deltaCell = document.createElement("td");
       deltaCell.classList.add(
         "delta",
-        changePositive ? "positive" : "negative"
+        changePositive ? "positive" : "negative",
       );
       deltaCell.textContent =
         item.change === 0
           ? currencyFormatter.format(0)
           : `${item.change > 0 ? "+" : "-"}${currencyFormatter.format(
-              Math.abs(item.change)
+              Math.abs(item.change),
             )}`;
 
       row.appendChild(nameCell);
@@ -663,10 +664,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       const projectedDirection =
         state.trendSummary.projectedChangePct <= 0 ? "decrease" : "increase";
       const actualPercent = percentFormatter.format(
-        Math.abs(state.trendSummary.actualChangePct) / 100
+        Math.abs(state.trendSummary.actualChangePct) / 100,
       );
       const projectedPercent = percentFormatter.format(
-        Math.abs(state.trendSummary.projectedChangePct) / 100
+        Math.abs(state.trendSummary.projectedChangePct) / 100,
       );
       elements.insightPositiveTitle.textContent = "Spending Trajectory";
       elements.insightPositiveText.textContent =
@@ -679,7 +680,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const projectedDirection =
         state.incomeSummary.projectedChangePct >= 0 ? "increase" : "dip";
       const projectedPercent = percentFormatter.format(
-        Math.abs(state.incomeSummary.projectedChangePct) / 100
+        Math.abs(state.incomeSummary.projectedChangePct) / 100,
       );
       elements.insightIncomeTitle.textContent = "Income Outlook";
       elements.insightIncomeText.textContent =
@@ -690,7 +691,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (state.riskCategory) {
       const changePercent = percentFormatter.format(
-        Math.abs(state.riskCategory.changePct) / 100
+        Math.abs(state.riskCategory.changePct) / 100,
       );
       elements.insightRiskTitle.textContent = "Spending Hotspot";
       elements.insightRiskText.textContent =
@@ -714,7 +715,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (error) {
       console.warn(
         "Finlytics forecast: falling back to INR format",
-        error.message
+        error.message,
       );
       return new Intl.NumberFormat("en-IN", {
         style: "currency",
@@ -794,6 +795,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         amount REAL NOT NULL CHECK (amount >= 0),
         billing_cycle TEXT NOT NULL,
         next_billing_date TEXT NOT NULL,
+        is_paused INTEGER DEFAULT 0,
         notes TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       );

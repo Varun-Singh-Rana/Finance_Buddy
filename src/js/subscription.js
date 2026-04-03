@@ -14,7 +14,7 @@ try {
 } catch (error) {
   console.warn(
     "Finlytics subscriptions: falling back to USD currency format:",
-    error.message
+    error.message,
   );
   currencyFormatter = new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -33,7 +33,7 @@ try {
 } catch (error) {
   console.warn(
     "Finlytics subscriptions: falling back to default date format:",
-    error.message
+    error.message,
   );
   dateFormatter = new Intl.DateTimeFormat("en-US", {
     day: "numeric",
@@ -199,7 +199,7 @@ function cacheElements() {
   elements.subscriptionStatus = document.getElementById("subscriptionStatus");
   elements.subscriptionLoading = document.getElementById("subscriptionLoading");
   elements.subscriptionEmptyState = document.getElementById(
-    "subscriptionEmptyState"
+    "subscriptionEmptyState",
   );
   elements.emptyStateAddBtn = document.getElementById("emptyStateAddBtn");
   elements.addSubscriptionBtn = document.getElementById("addSubscriptionBtn");
@@ -214,10 +214,10 @@ function cacheElements() {
   elements.categorySelect = document.getElementById("subscriptionCategory");
   elements.amountInput = document.getElementById("subscriptionAmount");
   elements.billingCycleSelect = document.getElementById(
-    "subscriptionBillingCycle"
+    "subscriptionBillingCycle",
   );
   elements.nextBillingInput = document.getElementById(
-    "subscriptionNextBilling"
+    "subscriptionNextBilling",
   );
   elements.notesInput = document.getElementById("subscriptionNotes");
   elements.saveButton = document.getElementById("saveSubscriptionBtn");
@@ -294,9 +294,29 @@ async function initDatabase() {
         billing_cycle TEXT NOT NULL,
         next_billing_date TEXT NOT NULL,
         notes TEXT,
+        is_paused INTEGER DEFAULT 0,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    // Ensure 'is_paused' column exists for older DBs
+    try {
+      const info = await pool.query("PRAGMA table_info(subscriptions);");
+      const cols = info.rows || info || [];
+      const hasPaused = cols.some(
+        (c) => c && (c.name === "is_paused" || c.name === "isPaused"),
+      );
+      if (!hasPaused) {
+        await pool.query(
+          "ALTER TABLE subscriptions ADD COLUMN is_paused INTEGER DEFAULT 0;",
+        );
+      }
+    } catch (__err) {
+      // non-fatal: if PRAGMA/ALTER fails, continue without pause support
+      console.warn(
+        "Could not migrate subscriptions table to add is_paused column",
+        __err,
+      );
+    }
     state.dbReady = true;
     toggleAddButtons(false);
     resetForm();
@@ -305,7 +325,7 @@ async function initDatabase() {
     console.error("Finlytics subscriptions: setup failed", error);
     showStatus(
       "error",
-      `Database setup failed: ${database.normalizeDbError(error)}`
+      `Database setup failed: ${database.normalizeDbError(error)}`,
     );
     toggleAddButtons(true);
     setLoading(false);
@@ -327,7 +347,8 @@ async function loadSubscriptions() {
         amount,
         billing_cycle,
         next_billing_date,
-        notes
+        notes,
+        IFNULL(is_paused, 0) AS is_paused
       FROM subscriptions
       ORDER BY
         CASE WHEN next_billing_date IS NULL OR next_billing_date = '' THEN 1 ELSE 0 END,
@@ -341,8 +362,8 @@ async function loadSubscriptions() {
       new Set(
         state.subscriptions
           .map((item) => item.category)
-          .filter((category) => !DEFAULT_CATEGORY_ORDER.includes(category))
-      )
+          .filter((category) => !DEFAULT_CATEGORY_ORDER.includes(category)),
+      ),
     ).sort((a, b) => a.localeCompare(b));
 
     syncCategoryOptions([...DEFAULT_CATEGORY_ORDER, ...extraCategories]);
@@ -353,7 +374,7 @@ async function loadSubscriptions() {
     console.error("Finlytics subscriptions: load failed", error);
     showStatus(
       "error",
-      `Unable to load subscriptions: ${database.normalizeDbError(error)}`
+      `Unable to load subscriptions: ${database.normalizeDbError(error)}`,
     );
   } finally {
     setLoading(false);
@@ -474,6 +495,15 @@ function buildSubscriptionCard(subscription) {
     }
   }
 
+  // paused indicator
+  if (subscription.isPaused) {
+    const pausedBadge = document.createElement("span");
+    pausedBadge.className = "badge paused-badge";
+    pausedBadge.textContent = "Paused";
+    tags.appendChild(pausedBadge);
+    card.classList.add("paused");
+  }
+
   info.appendChild(title);
   info.appendChild(tags);
 
@@ -493,7 +523,7 @@ function buildSubscriptionCard(subscription) {
   const amountStat = createStat(
     "Amount",
     formatCurrency(subscription.amount),
-    `${subscription.billingCycle} plan`
+    `${subscription.billingCycle} plan`,
   );
 
   const nextBillingLabel = formatDisplayDate(subscription.nextBilling);
@@ -515,21 +545,21 @@ function buildSubscriptionCard(subscription) {
   const nextBillingStat = createStat(
     "Next Billing",
     nextBillingLabel,
-    nextBillingHint
+    nextBillingHint,
   );
 
   const annualSpend = convertToAnnual(
     subscription.amount,
-    subscription.billingCycle
+    subscription.billingCycle,
   );
   const monthlyAvg = convertToMonthly(
     subscription.amount,
-    subscription.billingCycle
+    subscription.billingCycle,
   );
   const annualStat = createStat(
     "Annual Spend",
     formatCurrency(annualSpend),
-    `${formatCurrency(monthlyAvg)} monthly avg`
+    `${formatCurrency(monthlyAvg)} monthly avg`,
   );
 
   const deleteButton = document.createElement("button");
@@ -546,6 +576,32 @@ function buildSubscriptionCard(subscription) {
   right.appendChild(amountStat);
   right.appendChild(nextBillingStat);
   right.appendChild(annualStat);
+  // Edit button
+  const editButton = document.createElement("button");
+  editButton.type = "button";
+  editButton.className = "icon-button edit-btn";
+  editButton.dataset.action = "edit";
+  editButton.dataset.id = String(subscription.id);
+  editButton.title = "Edit subscription";
+  const editIcon = document.createElement("i");
+  editIcon.className = "fas fa-pen";
+  editButton.appendChild(editIcon);
+
+  // Pause/Resume button
+  const pauseButton = document.createElement("button");
+  pauseButton.type = "button";
+  pauseButton.className = "icon-button pause-btn";
+  pauseButton.dataset.action = "pause";
+  pauseButton.dataset.id = String(subscription.id);
+  pauseButton.title = subscription.isPaused
+    ? "Resume subscription"
+    : "Pause subscription";
+  const pauseIcon = document.createElement("i");
+  pauseIcon.className = subscription.isPaused ? "fas fa-play" : "fas fa-pause";
+  pauseButton.appendChild(pauseIcon);
+
+  right.appendChild(editButton);
+  right.appendChild(pauseButton);
   right.appendChild(deleteButton);
 
   card.appendChild(left);
@@ -587,34 +643,36 @@ function updateSummary(subscriptions) {
   ) {
     return;
   }
+  // Only count active (not paused) subscriptions for summaries
+  const active = subscriptions.filter((s) => !s.isPaused);
 
-  const totals = subscriptions.reduce(
+  const totals = active.reduce(
     (accumulator, subscription) => {
       accumulator.monthly += convertToMonthly(
         subscription.amount,
-        subscription.billingCycle
+        subscription.billingCycle,
       );
       accumulator.annual += convertToAnnual(
         subscription.amount,
-        subscription.billingCycle
+        subscription.billingCycle,
       );
       return accumulator;
     },
-    { monthly: 0, annual: 0 }
+    { monthly: 0, annual: 0 },
   );
 
   elements.totalMonthlyCost.textContent = formatCurrency(totals.monthly);
-  elements.activeSubscriptions.textContent = String(subscriptions.length);
+  elements.activeSubscriptions.textContent = String(active.length);
   elements.annualCost.textContent = formatCurrency(totals.annual);
 }
 
-function handleFormSubmit(event) {
+async function handleFormSubmit(event) {
   event.preventDefault();
 
   if (!state.dbReady || !pool) {
     showStatus(
       "error",
-      "Configure the database connection before adding subscriptions."
+      "Configure the database connection before adding subscriptions.",
     );
     return;
   }
@@ -629,9 +687,30 @@ function handleFormSubmit(event) {
     category: (data.get("category") || "Other").toString(),
     amount: Number(data.get("amount")),
     billingCycle: (data.get("billingCycle") || "Monthly").toString(),
-    nextBilling: (data.get("nextBilling") || "").toString(),
+    // form field is named `startBilling` in the HTML (input id kept as subscriptionNextBilling)
+    startBilling: (data.get("startBilling") || "").toString(),
     notes: (data.get("notes") || "").toString().trim(),
   };
+
+  // Determine nextBilling early so validation can run against it.
+  const editId = elements.saveButton?.dataset.editId;
+  if (editId) {
+    // Editing: preserve legacy behavior where the date input represents next billing
+    payload.nextBilling = payload.startBilling;
+  } else {
+    // New subscription: compute next billing from provided start date and billing cycle
+    payload.nextBilling = "";
+    if (payload.startBilling) {
+      const startDate = parseDateOnly(payload.startBilling);
+      if (startDate) {
+        const next = computeNextBillingFromStart(
+          startDate,
+          payload.billingCycle,
+        );
+        if (next) payload.nextBilling = formatDateForInput(next);
+      }
+    }
+  }
 
   const validationError = validatePayload(payload);
   if (validationError) {
@@ -639,7 +718,13 @@ function handleFormSubmit(event) {
     return;
   }
 
-  saveSubscription(payload);
+  // If editing, update instead of insert
+  if (editId) {
+    await updateSubscription(Number(editId), payload);
+    return;
+  }
+
+  await saveSubscription(payload);
 }
 
 async function saveSubscription(payload) {
@@ -663,7 +748,7 @@ async function saveSubscription(payload) {
         payload.billingCycle,
         payload.nextBilling,
         payload.notes,
-      ]
+      ],
     );
 
     closeModal();
@@ -673,7 +758,7 @@ async function saveSubscription(payload) {
     console.error("Finlytics subscriptions: save failed", error);
     showStatus(
       "error",
-      `Failed to save subscription: ${database.normalizeDbError(error)}`
+      `Failed to save subscription: ${database.normalizeDbError(error)}`,
     );
   } finally {
     setFormPending(false);
@@ -681,30 +766,54 @@ async function saveSubscription(payload) {
 }
 
 function handleListClick(event) {
-  const target = event.target.closest("[data-action='delete']");
-  if (!target) {
-    return;
-  }
+  const target = event.target.closest("[data-action]");
+  if (!target) return;
 
+  const action = target.dataset.action;
   const id = Number.parseInt(target.dataset.id || "", 10);
-  if (!Number.isFinite(id)) {
-    return;
-  }
+  if (!Number.isFinite(id)) return;
 
   const subscription = state.subscriptions.find((item) => item.id === id);
-  if (!subscription) {
-    return;
+  if (!subscription) return;
+
+  switch (action) {
+    case "delete": {
+      const confirmed = window.confirm(
+        `Delete ${subscription.name}? This action cannot be undone.`,
+      );
+      if (!confirmed) return;
+      deleteSubscription(id, subscription.name);
+      break;
+    }
+    case "edit": {
+      openModal();
+      if (elements.nameInput) elements.nameInput.value = subscription.name;
+      if (elements.categorySelect)
+        elements.categorySelect.value = subscription.category;
+      if (elements.amountInput)
+        elements.amountInput.value = String(subscription.amount);
+      if (elements.billingCycleSelect)
+        elements.billingCycleSelect.value = subscription.billingCycle;
+      if (elements.nextBillingInput)
+        elements.nextBillingInput.value = formatDateForInput(
+          subscription.nextBilling,
+        );
+      if (elements.notesInput)
+        elements.notesInput.value = subscription.notes || "";
+      if (elements.saveButton) elements.saveButton.dataset.editId = String(id);
+      if (elements.saveButtonLabel)
+        elements.saveButtonLabel.textContent = "Save Changes";
+      const titleEl = document.getElementById("subscriptionModalTitle");
+      if (titleEl) titleEl.textContent = "Edit Subscription";
+      break;
+    }
+    case "pause": {
+      togglePauseSubscription(id);
+      break;
+    }
+    default:
+      break;
   }
-
-  const confirmed = window.confirm(
-    `Delete ${subscription.name}? This action cannot be undone.`
-  );
-
-  if (!confirmed) {
-    return;
-  }
-
-  deleteSubscription(id, subscription.name);
 }
 
 async function deleteSubscription(id, name) {
@@ -721,10 +830,83 @@ async function deleteSubscription(id, name) {
     console.error("Finlytics subscriptions: delete failed", error);
     showStatus(
       "error",
-      `Could not delete subscription: ${database.normalizeDbError(error)}`
+      `Could not delete subscription: ${database.normalizeDbError(error)}`,
     );
   } finally {
     setLoading(false);
+  }
+}
+
+async function updateSubscription(id, payload) {
+  if (!pool) return;
+
+  setFormPending(true);
+  try {
+    await pool.query(
+      `UPDATE subscriptions
+       SET name = ?, category = ?, amount = ?, billing_cycle = ?, next_billing_date = ?, notes = ?
+       WHERE id = ?;`,
+      [
+        payload.name,
+        payload.category,
+        payload.amount,
+        payload.billingCycle,
+        payload.nextBilling,
+        payload.notes,
+        id,
+      ],
+    );
+
+    closeModal();
+    showToast(`${payload.name} updated`);
+    await loadSubscriptions();
+  } catch (error) {
+    console.error("Finlytics subscriptions: update failed", error);
+    showStatus(
+      "error",
+      `Failed to update subscription: ${database.normalizeDbError(error)}`,
+    );
+  } finally {
+    setFormPending(false);
+  }
+}
+
+async function togglePauseSubscription(id) {
+  if (!pool) return;
+
+  try {
+    // ensure migration (best-effort)
+    const info = await pool.query("PRAGMA table_info(subscriptions);");
+    const cols = info.rows || info || [];
+    const hasPaused = cols.some((c) => c && c.name === "is_paused");
+    if (!hasPaused) {
+      try {
+        await pool.query(
+          "ALTER TABLE subscriptions ADD COLUMN is_paused INTEGER DEFAULT 0;",
+        );
+      } catch (err) {
+        console.warn("Could not add is_paused column", err);
+      }
+    }
+
+    const r = await pool.query(
+      "SELECT IFNULL(is_paused, 0) AS is_paused FROM subscriptions WHERE id = ?;",
+      [id],
+    );
+    const current = (r.rows && r.rows[0] && Number(r.rows[0].is_paused)) || 0;
+    const next = current ? 0 : 1;
+    await pool.query("UPDATE subscriptions SET is_paused = ? WHERE id = ?;", [
+      next,
+      id,
+    ]);
+    await loadSubscriptions();
+    showToast(next ? "Subscription paused" : "Subscription resumed");
+  } catch (error) {
+    console.error("Finlytics subscriptions: toggle pause failed", error);
+    showStatus(
+      "error",
+      `Could not toggle pause: ${database.normalizeDbError(error)}`,
+    );
   }
 }
 
@@ -766,14 +948,39 @@ function resetForm() {
   }
   if (elements.nextBillingInput) {
     elements.nextBillingInput.value = formatDateForInput(
-      nextBillingDefaultDate()
+      nextBillingDefaultDate(),
     );
   }
+  // clear edit state
+  if (elements.saveButton) {
+    delete elements.saveButton.dataset.editId;
+  }
+  if (elements.saveButtonLabel) {
+    elements.saveButtonLabel.textContent = "Save Subscription";
+  }
+  const titleEl = document.getElementById("subscriptionModalTitle");
+  if (titleEl) titleEl.textContent = "Add Subscription";
 }
 
 function nextBillingDefaultDate() {
   const today = new Date();
   return new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7);
+}
+
+function computeNextBillingFromStart(startDate, billingCycle) {
+  if (!(startDate instanceof Date) || Number.isNaN(startDate.getTime()))
+    return null;
+
+  const daysMap = {
+    Weekly: 7,
+    Monthly: 28,
+    Quarterly: 28 * 3,
+    Semiannual: 28 * 6,
+    Yearly: 28 * 12,
+  };
+
+  const days = daysMap[billingCycle] || 28;
+  return new Date(startDate.getTime() + days * MILLISECONDS_IN_DAY);
 }
 
 function setFormPending(isPending) {
@@ -894,6 +1101,7 @@ function normalizeRow(row) {
     billingCycle: row.billing_cycle || "Monthly",
     nextBilling: parseDateOnly(row.next_billing_date),
     notes: row.notes || "",
+    isPaused: !!row.is_paused,
   };
 }
 

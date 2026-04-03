@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       dependencyError.code === "MODULE_NOT_FOUND"
         ? "Missing dependency 'sqlite3'. Run `npm install` and restart Finlytics."
         : `Unable to load SQLite driver: ${dependencyError.message}`,
-      "error"
+      "error",
     );
     return;
   }
@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!hasAnyData()) {
       showStatus(
         "Add transactions or subscriptions to populate your dashboard insights.",
-        "info"
+        "info",
       );
     } else {
       clearStatus();
@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("Finlytics dashboard: unable to load data", error);
     showStatus(
       `Unable to load dashboard data: ${database.normalizeDbError(error)}`,
-      "error"
+      "error",
     );
   }
 });
@@ -134,12 +134,24 @@ async function loadDashboardData() {
 
   const monthly = await queryMonthlySeries(6);
   const subscriptions = await querySubscriptionSummary();
-  const categories = await queryExpenseCategories(90);
+  // Transaction categories for the current month (for pie chart)
+  const currentMonthCategories = await queryExpenseCategoriesForMonth(0);
+  // Transaction categories for the previous full month (for insights)
+  const prevMonthCategories = await queryExpenseCategoriesForMonth(-1);
   const recent = await queryRecentTransactions(5);
 
   state.monthly = monthly;
   state.subscriptions = subscriptions;
-  state.categories = mergeCategoryData(categories, subscriptions.categories);
+  // categories used by the expense pie (current month)
+  state.categories = mergeCategoryData(
+    currentMonthCategories,
+    subscriptions.categories,
+  );
+  // categories used for generating insights (previous month preferred)
+  state.prevCategories = mergeCategoryData(
+    prevMonthCategories,
+    subscriptions.categories,
+  );
   state.recent = recent;
 
   applySubscriptionsToMonthly();
@@ -166,7 +178,7 @@ async function queryMonthlySeries(monthCount) {
 
   const rangeStart = formatDateForSql(months[0].startDate);
   const rangeEnd = formatDateForSql(
-    new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    new Date(now.getFullYear(), now.getMonth() + 1, 1),
   );
 
   const result = await database.query(
@@ -180,7 +192,7 @@ async function queryMonthlySeries(monthCount) {
       GROUP BY period
       ORDER BY period;
     `,
-    [rangeStart, rangeEnd]
+    [rangeStart, rangeEnd],
   );
 
   (result.rows || []).forEach((row) => {
@@ -204,20 +216,21 @@ async function querySubscriptionSummary() {
   const result = await database.query(
     `
       SELECT category, amount, billing_cycle
-      FROM subscriptions;
-    `
+      FROM subscriptions
+      WHERE IFNULL(is_paused, 0) = 0;
+    `,
   );
 
   (result.rows || []).forEach((row) => {
     const name = (row.category || "Subscriptions").trim() || "Subscriptions";
     const monthly = convertSubscriptionToMonthly(
       toNumber(row.amount),
-      row.billing_cycle
+      row.billing_cycle,
     );
     summary.totalMonthly = roundCurrency(summary.totalMonthly + monthly);
     summary.categories.set(
       name,
-      roundCurrency((summary.categories.get(name) || 0) + monthly)
+      roundCurrency((summary.categories.get(name) || 0) + monthly),
     );
   });
 
@@ -239,7 +252,34 @@ async function queryExpenseCategories(lookbackDays) {
       GROUP BY category
       ORDER BY total DESC;
     `,
-    [start]
+    [start],
+  );
+
+  return (result.rows || []).map((row) => ({
+    name: (row.category || "Uncategorized").trim() || "Uncategorized",
+    amount: toNumber(row.total),
+  }));
+}
+
+// Query expense categories for a specific month offset (0 = current month, -1 = previous month)
+async function queryExpenseCategoriesForMonth(monthOffset = 0) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + monthOffset; // handles negative offsets correctly
+  const start = formatDateForSql(new Date(year, month, 1));
+  const end = formatDateForSql(new Date(year, month + 1, 1));
+
+  const result = await database.query(
+    `
+      SELECT
+        category,
+        SUM(amount) AS total
+      FROM "transaction"
+      WHERE type = 'expense' AND occurred_at >= ? AND occurred_at < ?
+      GROUP BY category
+      ORDER BY total DESC;
+    `,
+    [start, end],
   );
 
   return (result.rows || []).map((row) => ({
@@ -290,7 +330,6 @@ function applySubscriptionsToMonthly() {
     month.expense = roundCurrency(month.expense + monthlyAmount);
   });
 }
-
 function computeTotals() {
   const months = state.monthly;
   if (!months.length) {
@@ -320,6 +359,41 @@ function computeTotals() {
     expenseTrend: computeTrend(current.expense, previous?.expense || 0),
     savingsTrend: computeTrend(currentSavings, previousSavings),
   };
+}
+
+function computeSuggestion() {
+  // Prefer insights for the previous full month (more stable than partial current month)
+  const months = state.monthly || [];
+  const prevMonth = months.length > 1 ? months[months.length - 2] : null;
+  const prevExpenseTotal = prevMonth ? prevMonth.expense : 0;
+
+  const insightCategories = state.prevCategories || state.categories || [];
+  if (prevExpenseTotal > 0 && insightCategories.length > 0) {
+    const top = insightCategories.reduce(
+      (max, c) => (c.amount > (max.amount || 0) ? c : max),
+      insightCategories[0] || { name: "Unknown", amount: 0 },
+    );
+    if (top && top.amount > 0) {
+      const percent = Math.round((top.amount / prevExpenseTotal) * 100);
+      const reducePercent = 10;
+      const saving = roundCurrency((top.amount * reducePercent) / 100);
+      const monthLabel = prevMonth ? "last month" : "this month";
+      return `You spent ${percent}% on ${escapeHtml(
+        top.name,
+      )} ${monthLabel}. Try reducing it by ${reducePercent}% to save ${formatCurrency(
+        saving,
+      )}.`;
+    }
+  }
+
+  // Fallback: show a suggestion based on income (same as before)
+  const baseIncome =
+    Number(state.profile?.monthly_income) || state.totals?.income || 0;
+  if (!baseIncome) {
+    return "No spending data available yet to provide insights.";
+  }
+  const recommended = roundCurrency(baseIncome * 0.1);
+  return `Automate ${formatCurrency(recommended)} into a high-yield savings plan this month.`;
 }
 
 function renderStats() {
@@ -365,7 +439,7 @@ function applyTrend(element, value, invert = false) {
   const icon = adjusted >= 0 ? "fa-arrow-up" : "fa-arrow-down";
   element.classList.add(direction);
   element.innerHTML = `<i class="fas ${icon}" aria-hidden="true"></i> ${formatPercent(
-    Math.abs(adjusted)
+    Math.abs(adjusted),
   )}`;
 }
 
@@ -376,7 +450,7 @@ function renderExpenseChart() {
 
   const labels = state.categories.map((category) => category.name);
   const data = state.categories.map((category) =>
-    roundCurrency(category.amount)
+    roundCurrency(category.amount),
   );
 
   if (charts.expense) {
@@ -432,10 +506,10 @@ function renderSpendingChart() {
 
   const labels = state.monthly.map((month) => month.label);
   const incomeSeries = state.monthly.map((month) =>
-    roundCurrency(month.income)
+    roundCurrency(month.income),
   );
   const expenseSeries = state.monthly.map((month) =>
-    roundCurrency(month.expense)
+    roundCurrency(month.expense),
   );
 
   if (charts.spending) {
@@ -530,8 +604,8 @@ function renderRecentTransactions() {
             <span>${formatDate(transaction.occurredAt)}</span>
           </div>
           <span class="amount ${amountClass}">${sign}${formatCurrency(
-        transaction.amount
-      )}</span>
+            transaction.amount,
+          )}</span>
         </li>
       `;
     })
@@ -548,20 +622,38 @@ function renderSuggestion() {
 }
 
 function computeSuggestion() {
+  const expenseTotal = state.totals?.expense || 0;
+  const categories = state.categories || [];
+
+  if (expenseTotal > 0 && categories.length > 0) {
+    const top = categories.reduce(
+      (max, c) => (c.amount > (max.amount || 0) ? c : max),
+      categories[0] || { name: "Unknown", amount: 0 },
+    );
+    if (top && top.amount > 0) {
+      const percent = Math.round((top.amount / expenseTotal) * 100);
+      const reducePercent = 10;
+      const saving = roundCurrency((top.amount * reducePercent) / 100);
+      return `You spent ${percent}% on ${escapeHtml(
+        top.name,
+      )} this month. Try reducing it by ${reducePercent}% to save ${formatCurrency(
+        saving,
+      )}.`;
+    }
+  }
+
   const baseIncome =
     Number(state.profile?.monthly_income) || state.totals?.income || 0;
   if (!baseIncome) {
-    return "Add your income details to unlock tailored savings suggestions.";
+    return "No spending data available yet to provide insights.";
   }
   const recommended = roundCurrency(baseIncome * 0.1);
-  return `Automate ${formatCurrency(
-    recommended
-  )} into a high-yield savings plan this month.`;
+  return `Automate ${formatCurrency(recommended)} into a high-yield savings plan this month.`;
 }
 
 function hasAnyData() {
   const hasMonthly = state.monthly.some(
-    (month) => month.income > 0 || month.expense > 0
+    (month) => month.income > 0 || month.expense > 0,
   );
   return hasMonthly || state.categories.length > 0 || state.recent.length > 0;
 }
@@ -712,6 +804,7 @@ async function ensureSubscriptionsTable() {
       amount REAL NOT NULL CHECK (amount >= 0),
       billing_cycle TEXT NOT NULL,
       next_billing_date TEXT NOT NULL,
+      is_paused INTEGER DEFAULT 0,
       notes TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
