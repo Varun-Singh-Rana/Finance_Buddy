@@ -181,6 +181,7 @@ window.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
+  loadProfile();
   initDatabase();
 });
 
@@ -193,6 +194,7 @@ function cacheElements() {
   elements.activeSubscriptions = document.getElementById("activeSubscriptions");
   elements.annualCost = document.getElementById("annualCost");
   elements.searchInput = document.getElementById("subscriptionSearch");
+  elements.avatar = document.querySelector(".header-actions .avatar");
   elements.categoryFilter = document.getElementById("categoryFilter");
   elements.sortSelect = document.getElementById("sortBy");
   elements.subscriptionList = document.getElementById("subscriptionList");
@@ -260,6 +262,23 @@ function toggleAddButtons(disabled) {
   }
   if (elements.emptyStateAddBtn) {
     elements.emptyStateAddBtn.disabled = disabled;
+  }
+}
+
+async function loadProfile() {
+  if (!elements.avatar) {
+    return;
+  }
+
+  try {
+    const profile = await database.getUserProfile();
+    const fullName = profile?.full_name?.trim();
+
+    if (fullName) {
+      elements.avatar.textContent = fullName.charAt(0).toUpperCase();
+    }
+  } catch (error) {
+    console.warn("Finlytics subscriptions: unable to load user profile", error);
   }
 }
 

@@ -188,6 +188,53 @@
             </table>
           </div>
         </section>
+
+        <section class="ai-explainability">
+          <div class="panel">
+            <header class="panel-header">
+              <div>
+                <h2>AI Forecast Details</h2>
+                <p class="panel-subtitle">
+                  Boosted decision trees with SHAP-style drivers for next month.
+                </p>
+              </div>
+              <div class="ai-pill" id="ai-model-pill">Training...</div>
+            </header>
+
+            <div class="ai-kpi-grid">
+              <div class="ai-kpi">
+                <p>Next Month Income</p>
+                <h3 id="ai-income-pred">--</h3>
+                <span class="ai-driver" id="ai-income-driver">Need more data</span>
+              </div>
+              <div class="ai-kpi">
+                <p>Next Month Expenses</p>
+                <h3 id="ai-expense-pred">--</h3>
+                <span class="ai-driver" id="ai-expense-driver">Need more data</span>
+              </div>
+              <div class="ai-kpi">
+                <p>Projected Savings</p>
+                <h3 id="ai-savings-pred">--</h3>
+                <span class="ai-driver" id="ai-savings-driver">Need more data</span>
+              </div>
+            </div>
+
+            <div class="ai-driver-section">
+              <div class="driver-column">
+                <h4>Top Drivers (SHAP)</h4>
+                <ul id="ai-driver-list" class="driver-list"></ul>
+              </div>
+              <div class="driver-column">
+                <h4>AI Insights</h4>
+                <p id="ai-insight-text" class="insight-text">
+                  Boosted-tree explanations will appear once we have enough history.
+                </p>
+                <h4>Category Hotspots</h4>
+                <ul id="ai-category-list" class="driver-list"></ul>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
     <script src="../js/window-controls.js"></script>

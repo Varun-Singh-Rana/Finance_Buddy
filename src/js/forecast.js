@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const state = {
     history: [],
     forecast: [],
+    boostedForecast: [],
     labels: [],
     incomeSeries: [],
     actualExpenseSeries: [],
@@ -15,6 +16,35 @@ document.addEventListener("DOMContentLoaded", async () => {
     trendSummary: null,
     incomeSummary: null,
     riskCategory: null,
+    nextMonthSnapshot: null,
+    aiContributions: {
+      income: [],
+      expense: [],
+      savings: [],
+      categories: {},
+    },
+    aiInsight: "",
+  };
+
+  const featureLabels = {
+    timeIndex: "Recent month trend",
+    prevIncome: "Last month income",
+    prevExpense: "Last month expenses",
+    incomeMomentum: "Income momentum",
+    expenseMomentum: "Expense momentum",
+    incomeAvg3: "Income 3-mo avg",
+    expenseAvg3: "Expense 3-mo avg",
+    incomeVolatility: "Income volatility",
+    expenseVolatility: "Expense volatility",
+    savingsPrev: "Last month savings",
+    expenseToIncomeRatioPrev: "Expense-to-income ratio",
+    seasonSin: "Seasonal swing",
+    seasonCos: "Seasonal alignment",
+    prevValue: "Last month spend",
+    momentum: "Category momentum",
+    avg3: "Category 3-mo avg",
+    volatility: "Category volatility",
+    bias: "Model baseline",
   };
 
   const charts = {
@@ -47,6 +77,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   buildIncomeExpenseChart();
   buildCategoryForecastChart();
   populateCategoryTable();
+  updateAiExplainability();
 
   function cacheElements() {
     return {
@@ -62,6 +93,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       insightIncomeText: document.getElementById("insight-income-text"),
       insightRiskTitle: document.getElementById("insight-risk-title"),
       insightRiskText: document.getElementById("insight-risk-text"),
+      aiIncomePred: document.getElementById("ai-income-pred"),
+      aiExpensePred: document.getElementById("ai-expense-pred"),
+      aiSavingsPred: document.getElementById("ai-savings-pred"),
+      aiIncomeDriver: document.getElementById("ai-income-driver"),
+      aiExpenseDriver: document.getElementById("ai-expense-driver"),
+      aiSavingsDriver: document.getElementById("ai-savings-driver"),
+      aiModelPill: document.getElementById("ai-model-pill"),
+      aiDriverList: document.getElementById("ai-driver-list"),
+      aiInsightText: document.getElementById("ai-insight-text"),
+      aiCategoryList: document.getElementById("ai-category-list"),
     };
   }
 
@@ -123,14 +164,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       clearStatus();
 
-      const forecast = computeForecastFromHistory(history, 3);
-      state.forecast = forecast;
+      const boosted = await computeBoostedForecast(history, 3);
+      state.boostedForecast = boosted?.points || [];
+      state.forecast =
+        boosted?.points && boosted.points.length
+          ? boosted.points
+          : computeForecastFromHistory(history, 3);
+      state.nextMonthSnapshot = boosted?.nextMonthSnapshot || null;
+      state.aiContributions = boosted?.contributions || state.aiContributions;
+      state.aiInsight = boosted?.insight || "";
 
-      composeSeries(history, forecast);
+      composeSeries(history, state.forecast);
 
       state.categoryRows = await computeCategoryOutlook(history);
-      state.trendSummary = computeExpenseTrend(history, forecast);
-      state.incomeSummary = computeIncomeTrend(history, forecast);
+      state.trendSummary = computeExpenseTrend(history, state.forecast);
+      state.incomeSummary = computeIncomeTrend(history, state.forecast);
       state.riskCategory =
         state.categoryRows
           .filter((row) => row.change > 0)
@@ -227,28 +275,361 @@ document.addEventListener("DOMContentLoaded", async () => {
     return forecast;
   }
 
+  async function computeBoostedForecast(history, monthsAhead) {
+    if (!history || history.length < 3) {
+      return null;
+    }
+
+    const featureKeys = [
+      "timeIndex",
+      "prevIncome",
+      "prevExpense",
+      "incomeMomentum",
+      "expenseMomentum",
+      "incomeAvg3",
+      "expenseAvg3",
+      "incomeVolatility",
+      "expenseVolatility",
+      "savingsPrev",
+      "expenseToIncomeRatioPrev",
+      "seasonSin",
+      "seasonCos",
+    ];
+
+    const incomeTraining = [];
+    const expenseTraining = [];
+
+    for (let index = 1; index < history.length; index += 1) {
+      const featureVector = buildFeatureVector(history, index);
+      if (!featureVector) {
+        continue;
+      }
+      incomeTraining.push({
+        features: featureVector,
+        target: roundCurrency(history[index].income),
+      });
+      expenseTraining.push({
+        features: featureVector,
+        target: roundCurrency(history[index].expense),
+      });
+    }
+
+    if (incomeTraining.length < 2 || expenseTraining.length < 2) {
+      return null;
+    }
+
+    const incomeModel = trainGradientBoosting(incomeTraining, featureKeys, {
+      trees: 10,
+      learningRate: 0.3,
+    });
+    const expenseModel = trainGradientBoosting(expenseTraining, featureKeys, {
+      trees: 10,
+      learningRate: 0.3,
+    });
+
+    if (!incomeModel || !expenseModel) {
+      return null;
+    }
+
+    const syntheticHistory = [...history];
+    const forecast = [];
+    let nextMonthSnapshot = null;
+    let contributions = {
+      income: [],
+      expense: [],
+      savings: [],
+      categories: {},
+    };
+
+    for (let step = 1; step <= monthsAhead; step += 1) {
+      const anchor = history[history.length - 1].startDate;
+      const targetDate = new Date(anchor.getFullYear(), anchor.getMonth() + step, 1);
+      const targetIndex = syntheticHistory.length;
+      const featureVector = buildFeatureVector(
+        syntheticHistory,
+        targetIndex,
+        targetDate,
+      );
+      if (!featureVector) {
+        break;
+      }
+      const incomeResult = predictWithModel(incomeModel, featureVector);
+      const expenseResult = predictWithModel(expenseModel, featureVector);
+      const income = Math.max(0, roundCurrency(incomeResult.prediction));
+      const expense = Math.max(0, roundCurrency(expenseResult.prediction));
+      const point = {
+        key: formatMonthKey(targetDate),
+        label: monthFormatter.format(targetDate),
+        startDate: targetDate,
+        expense,
+        income,
+      };
+      forecast.push(point);
+      syntheticHistory.push(point);
+
+      if (step === 1) {
+        const savings = roundCurrency(income - expense);
+        contributions = {
+          income: normalizeContributions(incomeResult.contributions),
+          expense: normalizeContributions(expenseResult.contributions),
+          savings: normalizeContributions(
+            combineSavingsContributions(
+              incomeResult.contributions,
+              expenseResult.contributions,
+            ),
+          ),
+          categories: {},
+        };
+        nextMonthSnapshot = { income, expense, savings };
+      }
+    }
+
+    const insight = buildAiInsightText(
+      nextMonthSnapshot,
+      contributions.savings,
+    );
+
+    return {
+      points: forecast,
+      contributions,
+      nextMonthSnapshot,
+      insight,
+    };
+  }
+
+  function buildFeatureVector(historyData, targetIndex, overrideDate) {
+    const prevIndex = targetIndex - 1;
+    const prev = historyData[prevIndex];
+    if (!prev) {
+      return null;
+    }
+    const prev2 = historyData[prevIndex - 1] || prev;
+    const prev3 = historyData[prevIndex - 2] || prev2;
+
+    const incomeWindow = historyData
+      .slice(Math.max(0, prevIndex - 2), prevIndex + 1)
+      .map((item) => toNumber(item.income));
+    const expenseWindow = historyData
+      .slice(Math.max(0, prevIndex - 2), prevIndex + 1)
+      .map((item) => toNumber(item.expense));
+
+    const targetDate =
+      overrideDate ||
+      historyData[targetIndex]?.startDate ||
+      new Date(prev.startDate.getFullYear(), prev.startDate.getMonth() + 1, 1);
+    const monthNumber = targetDate.getMonth() + 1;
+
+    return {
+      timeIndex: targetIndex + 1,
+      prevIncome: toNumber(prev.income),
+      prevExpense: toNumber(prev.expense),
+      incomeMomentum: toNumber(prev.income) - toNumber(prev2.income),
+      expenseMomentum: toNumber(prev.expense) - toNumber(prev2.expense),
+      incomeAvg3: averageArray(incomeWindow),
+      expenseAvg3: averageArray(expenseWindow),
+      incomeVolatility: standardDeviation(incomeWindow),
+      expenseVolatility: standardDeviation(expenseWindow),
+      savingsPrev: toNumber(prev.income) - toNumber(prev.expense),
+      expenseToIncomeRatioPrev:
+        toNumber(prev.income) > 0
+          ? toNumber(prev.expense) / toNumber(prev.income)
+          : 0,
+      seasonSin: Math.sin((2 * Math.PI * monthNumber) / 12),
+      seasonCos: Math.cos((2 * Math.PI * monthNumber) / 12),
+    };
+  }
+
+  function trainGradientBoosting(rows, featureKeys, options = {}) {
+    if (!rows.length) {
+      return null;
+    }
+    const maxTrees = options.trees || 8;
+    const learningRate = options.learningRate || 0.3;
+    const minSamples = options.minSamples || 2;
+
+    const base =
+      rows.reduce((sum, row) => sum + toNumber(row.target), 0) / rows.length;
+    const predictions = rows.map(() => base);
+    const trees = [];
+
+    for (let round = 0; round < maxTrees; round += 1) {
+      const residuals = rows.map(
+        (row, idx) => toNumber(row.target) - predictions[idx],
+      );
+      const stump = findBestStump(rows, residuals, featureKeys, minSamples);
+      if (!stump || stump.gain <= 0) {
+        break;
+      }
+      const tree = { ...stump, lr: learningRate };
+      trees.push(tree);
+      rows.forEach((row, idx) => {
+        const leafValue =
+          row.features[tree.feature] <= tree.threshold
+            ? tree.left
+            : tree.right;
+        predictions[idx] += learningRate * leafValue;
+      });
+      if (stump.gain < 1e-3) {
+        break;
+      }
+    }
+
+    return { base, trees, featureKeys };
+  }
+
+  function findBestStump(rows, residuals, featureKeys, minSamples) {
+    const totalLoss = residuals.reduce((sum, value) => sum + value * value, 0);
+    let best = null;
+
+    featureKeys.forEach((feature) => {
+      const pairs = rows
+        .map((row, idx) => ({
+          value: toNumber(row.features[feature]),
+          residual: residuals[idx],
+        }))
+        .filter((pair) => Number.isFinite(pair.value));
+
+      if (pairs.length < minSamples * 2) {
+        return;
+      }
+
+      pairs.sort((a, b) => a.value - b.value);
+
+      for (let index = 1; index < pairs.length; index += 1) {
+        const left = pairs.slice(0, index);
+        const right = pairs.slice(index);
+        if (left.length < minSamples || right.length < minSamples) {
+          continue;
+        }
+        const threshold =
+          (pairs[index - 1].value + pairs[index].value) / 2 ||
+          pairs[index].value;
+        const leftMean =
+          left.reduce((sum, item) => sum + item.residual, 0) / left.length;
+        const rightMean =
+          right.reduce((sum, item) => sum + item.residual, 0) / right.length;
+        const lossLeft = left.reduce(
+          (sum, item) => sum + (item.residual - leftMean) ** 2,
+          0,
+        );
+        const lossRight = right.reduce(
+          (sum, item) => sum + (item.residual - rightMean) ** 2,
+          0,
+        );
+        const loss = lossLeft + lossRight;
+        const gain = totalLoss - loss;
+
+        if (!best || gain > best.gain) {
+          best = {
+            feature,
+            threshold,
+            left: leftMean,
+            right: rightMean,
+            gain,
+          };
+        }
+      }
+    });
+
+    return best;
+  }
+
+  function predictWithModel(model, featureVector) {
+    if (!model) {
+      return { prediction: 0, contributions: [] };
+    }
+
+    let prediction = model.base;
+    const contributionMap = new Map();
+    contributionMap.set("bias", model.base);
+
+    model.trees.forEach((tree) => {
+      const leaf =
+        featureVector[tree.feature] <= tree.threshold
+          ? tree.left
+          : tree.right;
+      const impact = tree.lr * leaf;
+      prediction += impact;
+      contributionMap.set(
+        tree.feature,
+        (contributionMap.get(tree.feature) || 0) + impact,
+      );
+    });
+
+    return {
+      prediction,
+      contributions: Array.from(contributionMap.entries()).map(
+        ([feature, value]) => ({
+          feature,
+          value,
+        }),
+      ),
+    };
+  }
+
+  function normalizeContributions(contributions) {
+    return (contributions || [])
+      .map((item) => ({
+        feature: item.feature,
+        value: roundCurrency(item.value),
+      }))
+      .filter((item) => Number.isFinite(item.value))
+      .sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+  }
+
+  function combineSavingsContributions(incomeContribs, expenseContribs) {
+    const map = new Map();
+    (incomeContribs || []).forEach((item) => {
+      map.set(item.feature, (map.get(item.feature) || 0) + item.value);
+    });
+    (expenseContribs || []).forEach((item) => {
+      map.set(item.feature, (map.get(item.feature) || 0) - item.value);
+    });
+    return Array.from(map.entries()).map(([feature, value]) => ({
+      feature,
+      value,
+    }));
+  }
+
+  function buildAiInsightText(snapshot, savingsContribs) {
+    if (!snapshot) {
+      return "";
+    }
+    const topDriver =
+      (savingsContribs || []).find((item) => item.feature !== "bias") || null;
+    const driverLabel = topDriver
+      ? featureLabels[topDriver.feature] || topDriver.feature
+      : null;
+    const direction = snapshot.savings >= 0 ? "surplus" : "shortfall";
+    const headline = `AI projects a ${direction} of ${currencyFormatter.format(
+      Math.abs(snapshot.savings),
+    )} next month.`;
+    const driverText = driverLabel
+      ? `${driverLabel} is contributing a ${
+          topDriver.value >= 0 ? "lift" : "drag"
+        } of ${currencyFormatter.format(Math.abs(topDriver.value))}.`
+      : "Forecast uses boosted decision-tree patterns from your recent history.";
+    const riskText =
+      snapshot.expense > snapshot.income
+        ? "Alert: expenses are set to outpace income. Trim the top rising categories to avoid a cash squeeze."
+        : "Opportunity: keep the surplus by locking in savings or paying down debt.";
+    return `${headline} ${driverText} ${riskText}`;
+  }
+
   async function computeCategoryOutlook(history) {
     if (!history.length) {
       return [];
     }
 
-    const currentPeriod = history[history.length - 1];
-    const previousPeriod =
-      history.length > 1 ? history[history.length - 2] : null;
-    const periodStart = formatDateForSql(
-      new Date(
-        currentPeriod.startDate.getFullYear(),
-        currentPeriod.startDate.getMonth() - 1,
-        1,
-      ),
-    );
+    const earliest = history[0].startDate;
+    const latest = history[history.length - 1].startDate;
+    const periodStart = formatDateForSql(earliest);
     const periodEnd = formatDateForSql(
-      new Date(
-        currentPeriod.startDate.getFullYear(),
-        currentPeriod.startDate.getMonth() + 1,
-        1,
-      ),
+      new Date(latest.getFullYear(), latest.getMonth() + 1, 1),
     );
+
+    const monthLookup = new Map();
+    history.forEach((item, index) => monthLookup.set(item.key, index));
 
     const categoryResult = await database.query(
       `
@@ -265,18 +646,18 @@ document.addEventListener("DOMContentLoaded", async () => {
       [periodStart, periodEnd],
     );
 
-    const categoryMap = new Map();
+    const categorySeries = new Map();
 
     (categoryResult.rows || []).forEach((row) => {
       const name = (row.category || "Uncategorized").trim() || "Uncategorized";
-      const totals = categoryMap.get(name) || { current: 0, previous: 0 };
       const periodKey = row.period;
-      if (periodKey === currentPeriod.key) {
-        totals.current += toNumber(row.total);
-      } else if (previousPeriod && periodKey === previousPeriod.key) {
-        totals.previous += toNumber(row.total);
+      const monthIndex = monthLookup.get(periodKey);
+      if (typeof monthIndex !== "number") {
+        return;
       }
-      categoryMap.set(name, totals);
+      const series = categorySeries.get(name) || new Array(history.length).fill(0);
+      series[monthIndex] += toNumber(row.total);
+      categorySeries.set(name, series);
     });
 
     const subscriptionResult = await database.query(
@@ -289,36 +670,142 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     (subscriptionResult.rows || []).forEach((row) => {
       const name = (row.category || "Subscriptions").trim() || "Subscriptions";
-      const totals = categoryMap.get(name) || { current: 0, previous: 0 };
+      const series =
+        categorySeries.get(name) || new Array(history.length).fill(0);
       const monthly = convertSubscriptionToMonthly(
         toNumber(row.amount),
         row.billing_cycle,
       );
-      totals.current += monthly;
-      totals.previous += monthly;
-      categoryMap.set(name, totals);
+      for (let index = 0; index < series.length; index += 1) {
+        series[index] += monthly;
+      }
+      categorySeries.set(name, series);
     });
 
-    const rows = Array.from(categoryMap.entries()).map(([name, totals]) => {
-      const current = roundCurrency(totals.current);
-      const previous = roundCurrency(totals.previous);
-      const baseline = previous > 0 ? previous : current;
-      const trend = previous > 0 ? current - previous : baseline * 0.05;
-      const forecast = Math.max(0, roundCurrency(current + trend));
-      const change = forecast - current;
-      const changePct =
-        current > 0 ? (change / current) * 100 : forecast > 0 ? 100 : 0;
-      return {
-        name,
-        current,
-        forecast,
-        change,
-        changePct,
-      };
-    });
+    const nextMonthDate = new Date(latest.getFullYear(), latest.getMonth() + 1, 1);
+
+    const rows = Array.from(categorySeries.entries()).map(
+      ([name, series]) => {
+        const current = roundCurrency(series[series.length - 1] || 0);
+        const previous =
+          series.length > 1 ? roundCurrency(series[series.length - 2] || 0) : 0;
+        const modelResult = buildCategoryForecast(series, history, nextMonthDate);
+        const forecast =
+          modelResult && modelResult.forecast != null
+            ? modelResult.forecast
+            : computeBaselineForecast(current, previous);
+        const change = forecast - current;
+        const changePct =
+          current > 0 ? (change / current) * 100 : forecast > 0 ? 100 : 0;
+        return {
+          name,
+          current,
+          forecast,
+          change,
+          changePct,
+          drivers: modelResult?.drivers || [],
+          topDriver: modelResult?.topDriver || "",
+          driverDirection: modelResult?.driverDirection || "neutral",
+        };
+      },
+    );
 
     rows.sort((a, b) => b.current - a.current);
     return rows.slice(0, 6);
+  }
+
+  function computeBaselineForecast(current, previous) {
+    const baseline = previous > 0 ? previous : current;
+    const trend = previous > 0 ? current - previous : baseline * 0.05;
+    return Math.max(0, roundCurrency(current + trend));
+  }
+
+  function buildCategoryForecast(series, history, nextMonthDate) {
+    const featureKeys = [
+      "prevValue",
+      "momentum",
+      "avg3",
+      "volatility",
+      "seasonSin",
+      "seasonCos",
+    ];
+
+    const samples = [];
+    for (let index = 1; index < series.length; index += 1) {
+      const featureVector = buildCategoryFeatureVector(
+        series,
+        index,
+        history[index]?.startDate,
+      );
+      if (!featureVector) {
+        continue;
+      }
+      samples.push({
+        features: featureVector,
+        target: roundCurrency(series[index]),
+      });
+    }
+
+    if (samples.length < 2) {
+      return null;
+    }
+
+    const model = trainGradientBoosting(samples, featureKeys, {
+      trees: 6,
+      learningRate: 0.35,
+    });
+
+    if (!model) {
+      return null;
+    }
+
+    const featureVector = buildCategoryFeatureVector(
+      series,
+      series.length,
+      nextMonthDate,
+    );
+    if (!featureVector) {
+      return null;
+    }
+
+    const result = predictWithModel(model, featureVector);
+    const normalizedDrivers = normalizeContributions(result.contributions);
+    const topDriver = normalizedDrivers.find((item) => item.feature !== "bias");
+
+    return {
+      forecast: Math.max(0, roundCurrency(result.prediction)),
+      drivers: normalizedDrivers,
+      topDriver: topDriver
+        ? featureLabels[topDriver.feature] || topDriver.feature
+        : "",
+      driverDirection: topDriver
+        ? topDriver.value >= 0
+          ? "positive"
+          : "negative"
+        : "neutral",
+    };
+  }
+
+  function buildCategoryFeatureVector(series, targetIndex, targetDate) {
+    const prevIndex = targetIndex - 1;
+    const prevValue = toNumber(series[prevIndex]);
+    if (!Number.isFinite(prevValue)) {
+      return null;
+    }
+    const prev2Value = toNumber(series[prevIndex - 1] ?? prevValue);
+    const window = series
+      .slice(Math.max(0, prevIndex - 2), prevIndex + 1)
+      .map((value) => toNumber(value));
+    const monthNumber = (targetDate || new Date()).getMonth() + 1;
+
+    return {
+      prevValue,
+      momentum: prevValue - prev2Value,
+      avg3: averageArray(window),
+      volatility: standardDeviation(window),
+      seasonSin: Math.sin((2 * Math.PI * monthNumber) / 12),
+      seasonCos: Math.cos((2 * Math.PI * monthNumber) / 12),
+    };
   }
 
   function composeSeries(history, forecast) {
@@ -598,6 +1085,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const nameCell = document.createElement("td");
       nameCell.textContent = item.name;
+      if (item.topDriver) {
+        const driverChip = document.createElement("span");
+        driverChip.classList.add("driver-chip");
+        if (item.driverDirection === "positive") {
+          driverChip.classList.add("positive");
+        } else if (item.driverDirection === "negative") {
+          driverChip.classList.add("negative");
+        }
+        driverChip.textContent = item.topDriver;
+        nameCell.appendChild(document.createTextNode(" "));
+        nameCell.appendChild(driverChip);
+      }
 
       const rangeCell = document.createElement("td");
       rangeCell.innerHTML = `${currencyFormatter.format(
@@ -705,6 +1204,134 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  function updateAiExplainability() {
+    if (!elements.aiIncomePred) {
+      return;
+    }
+
+    if (!state.nextMonthSnapshot) {
+      elements.aiIncomePred.textContent = "--";
+      elements.aiExpensePred.textContent = "--";
+      elements.aiSavingsPred.textContent = "--";
+      elements.aiIncomeDriver.textContent = "Need more history";
+      elements.aiExpenseDriver.textContent = "Need more history";
+      elements.aiSavingsDriver.textContent = "Need more history";
+      if (elements.aiModelPill) {
+        elements.aiModelPill.textContent = "Learning";
+      }
+      if (elements.aiDriverList) {
+        elements.aiDriverList.innerHTML =
+          "<li class=\"driver-row\">Add a few months of data to unlock AI explanations.</li>";
+      }
+      if (elements.aiInsightText) {
+        elements.aiInsightText.textContent =
+          "AI insights will activate once recent income and expense trends are available.";
+      }
+      renderCategoryHotspots();
+      return;
+    }
+
+    const { income, expense, savings } = state.nextMonthSnapshot;
+    elements.aiIncomePred.textContent = currencyFormatter.format(income);
+    elements.aiExpensePred.textContent = currencyFormatter.format(expense);
+    elements.aiSavingsPred.textContent = currencyFormatter.format(savings);
+
+    const incomeTop = (state.aiContributions.income || []).find(
+      (item) => item.feature !== "bias",
+    );
+    const expenseTop = (state.aiContributions.expense || []).find(
+      (item) => item.feature !== "bias",
+    );
+    const savingsTop = (state.aiContributions.savings || []).find(
+      (item) => item.feature !== "bias",
+    );
+
+    elements.aiIncomeDriver.textContent = incomeTop
+      ? formatDriverLabel(incomeTop)
+      : "Model baseline";
+    elements.aiExpenseDriver.textContent = expenseTop
+      ? formatDriverLabel(expenseTop)
+      : "Model baseline";
+    elements.aiSavingsDriver.textContent = savingsTop
+      ? formatDriverLabel(savingsTop)
+      : "Model baseline";
+
+    if (elements.aiModelPill) {
+      elements.aiModelPill.textContent = "Tree Boosted";
+    }
+
+    renderDriverList(elements.aiDriverList, state.aiContributions.savings);
+    renderCategoryHotspots();
+
+    if (elements.aiInsightText) {
+      elements.aiInsightText.textContent =
+        state.aiInsight ||
+        "Boosted trees are ready. Adjust spending to keep the projected surplus trending up.";
+    }
+  }
+
+  function formatDriverLabel(contribution) {
+    const label = featureLabels[contribution.feature] || contribution.feature;
+    const direction = contribution.value >= 0 ? "up" : "down";
+    return `${label} nudging ${direction}`;
+  }
+
+  function renderDriverList(targetElement, contributions) {
+    if (!targetElement) {
+      return;
+    }
+    targetElement.innerHTML = "";
+    const filtered = (contributions || []).filter(
+      (item) => item.feature && item.feature !== "bias",
+    );
+    if (!filtered.length) {
+      targetElement.innerHTML =
+        "<li class=\"driver-row\">Not enough data for explanations yet.</li>";
+      return;
+    }
+
+    filtered.slice(0, 4).forEach((item) => {
+      const li = document.createElement("li");
+      li.classList.add("driver-row", item.value >= 0 ? "positive" : "negative");
+      const label = featureLabels[item.feature] || item.feature;
+      li.innerHTML = `
+        <span class="driver-label">${label}</span>
+        <span class="driver-impact">${
+          item.value >= 0 ? "+" : "-"
+        }${currencyFormatter.format(Math.abs(item.value))}</span>
+      `;
+      targetElement.appendChild(li);
+    });
+  }
+
+  function renderCategoryHotspots() {
+    if (!elements.aiCategoryList) {
+      return;
+    }
+    elements.aiCategoryList.innerHTML = "";
+    if (!state.categoryRows.length) {
+      elements.aiCategoryList.innerHTML =
+        "<li class=\"driver-row\">Add transactions to see category hotspots.</li>";
+      return;
+    }
+
+    const sorted = [...state.categoryRows]
+      .sort((a, b) => Math.abs(b.changePct) - Math.abs(a.changePct))
+      .slice(0, 3);
+
+    sorted.forEach((row) => {
+      const li = document.createElement("li");
+      li.classList.add("driver-row", row.change > 0 ? "negative" : "positive");
+      li.innerHTML = `
+        <span class="driver-label">${row.name}</span>
+        <span class="driver-impact">${percentFormatter.format(
+          Math.abs(row.changePct) / 100,
+        )}</span>
+      `;
+      elements.aiCategoryList.appendChild(li);
+    });
+  }
+
   function createCurrencyFormatter(localeValue, currencyValue) {
     try {
       return new Intl.NumberFormat(localeValue, {
@@ -784,6 +1411,27 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function roundCurrency(value) {
     return Math.round((value || 0) * 100) / 100;
+  }
+
+  function averageArray(values) {
+    if (!values || !values.length) {
+      return 0;
+    }
+    const sum = values.reduce((acc, value) => acc + toNumber(value), 0);
+    return sum / values.length;
+  }
+
+  function standardDeviation(values) {
+    if (!values || !values.length) {
+      return 0;
+    }
+    const mean = averageArray(values);
+    const variance =
+      values.reduce(
+        (acc, value) => acc + (toNumber(value) - mean) ** 2,
+        0,
+      ) / values.length;
+    return Math.sqrt(variance);
   }
 
   async function ensureSubscriptionsTable() {
