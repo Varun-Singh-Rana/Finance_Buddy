@@ -6,6 +6,9 @@
   "scripts": {
     "start": "electron .",
     "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -27,6 +30,7 @@
   },
   "homepage": "https://github.com/Varun-Singh-Rana/Finance_Buddy#readme",
   "build": {
+    "appId": "com.finlytics.app",
     "productName": "Finlytics",
     "directories": {
       "output": "dist"
@@ -38,7 +42,16 @@
       }
     ],
     "win": {
+      "target": "nsis",
       "icon": "src/assets/Finlytics_logo.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "src/assets/Finlytics_logo.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "src/assets/Finlytics_logo.png"
     }
   }
 }

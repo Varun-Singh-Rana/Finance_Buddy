@@ -7,52 +7,112 @@
 
 ### **Introduction**
 
-FinLytics is a smart personal finance assistant that combines finance and analytics to help users track their income, expenses, subscriptions, and savings efficiently.
-Built as a full-stack Electron desktop application, FinLytics uses machine learning to forecast spending trends, provide adaptive saving suggestions, and guide users in affordability decisions such as EMI vs full payments.
+FinLytics is a smart personal finance assistant designed to help users track, analyze, and forecast their financial activities efficiently.
 
-Key Features
+Built as a full-stack Electron desktop application, FinLytics integrates data analytics and a lightweight machine learning system to provide intelligent insights such as spending forecasts, saving recommendations, and affordability analysis.
 
-- Transaction Management: Record and categorize all income, expenses, and subscriptions in one place.
-- Expense Categorization (ML): Automatically classify transactions using a trained ML model.
-- Spending Forecast: Predict upcoming monthly expenses based on past patterns.
-- Smart Saving Advisor: Suggest monthly saving targets and advise when to spend or save more.
-- Affordability Checker: Recommend whether the user can buy on EMI or full payment based on income and savings.
-- Data Visualization: Interactive charts and dashboards for financial insights.
-- Cross-Platform Desktop App: Runs smoothly on Windows, macOS, and Linux through Electron.
-- Offline Capability: Uses local database (SQLite) for privacy and performance.
+The application is fully offline-capable and ensures user privacy by storing all data locally.
+
+## Key Features
+
+### 💰 Transaction Management
+
+- Record and manage income, expenses, and subscriptions
+- Categorize transactions for better financial tracking
+
+### 🤖 Smart Categorization (ML-based)
+
+- Automatically classifies transactions using a trained model
+
+### 📊 Spending Forecast
+
+- Predicts future income, expenses, and savings
+- Uses a custom gradient boosting-based model with time-series features
+
+### 🧠 Explainable Insights
+
+- Provides feature-based explanations for predictions
+- Helps users understand _why_ expenses may increase or decrease
+
+### 💡 Smart Saving Advisor
+
+- Suggests adaptive saving strategies:
+  - Increase saving
+  - Maintain balance
+  - Relaxed spending months
+
+### 🏦 Affordability Checker
+
+- Recommends whether to:
+  - Buy using EMI
+  - Pay full amount
+- Based on income stability and predicted expenses
+
+### 📈 Data Visualization
+
+- Interactive dashboards and charts
+- Category-wise and monthly breakdowns
+
+### 🖥️ Cross-Platform Desktop App
+
+- Built with Electron
+- Works on Windows, macOS, and Linux
+
+### 🔒 Offline & Private
+
+- Uses SQLite for local data storage
+- No cloud dependency → full privacy
 
 ---
 
 ### **Tech Stack**
 
-Frontend:
+## Frontend:
 
 - Electron.js
-- HTML, CSS, JavaScript (React recommended for UI)
-- Chart.js / Recharts for data visualization
+- HTML, CSS, JavaScript
+- Chart.js (for visual analytics)
 
-Backend:
+## Backend:
 
-- Node.js with Express.js
-- RESTful APIs for client-server communication
+- Node.js
+- Express.js
 
-Machine Learning Layer:
+## Machine Learning Layer:
 
-- Python (scikit-learn, Prophet/ARIMA, XGBoost)
-- Flask/FastAPI microservice for ML model predictions
+- Custom Gradient Boosting Model (JavaScript)
+- Time-series feature engineering:
+  - Momentum
+  - Moving averages
+  - Volatility
+  - Seasonality
+    > ⚠️ Note: This project uses a lightweight custom ML implementation optimized for offline performance.
 
-Database:
+## Database:
 
-- SQLite (local, default storage)
+- SQLite (local storage)
 
-Example Key Functions
+---
 
-- Add, edit, delete, and categorize transactions
-- View income, expenses, and savings summary
-- Predict next month’s spending
-- Check if an EMI purchase is affordable
-- Get adaptive saving tips (increase, maintain, or lenient month)
-- Visualize data through charts and graphs
+## Core Functionalities
+
+- Add, edit, and delete transactions
+- Automatic expense categorization
+- Monthly financial summaries
+- Future expense and savings prediction
+- EMI vs Full payment recommendation
+- Smart saving suggestions
+- Visual analytics dashboard
+
+---
+
+## Future Improvements
+
+- Advanced ML integration (XGBoost / LSTM)
+- Real Explainable AI (SHAP integration)
+- Cloud sync & backup
+- Mobile companion app
+- Budget goal tracking system
 
 ---
 
@@ -69,10 +129,14 @@ Access the app:
 
 ### **Contributing**
 
-> Contributions are welcome! Please feel free to submit issues or pull requests.
+Contributions are welcome!
+
+- Fork the repository
+- Create a feature branch
+- Submit a pull request
 
 ---
 
 ### **License**
 
-> This project is licensed under the MIT License — free to use, modify, and distribute with credit.
+> This project is licensed under the **MIT License** — free to use, modify, and distribute with credit.
