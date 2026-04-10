@@ -362,7 +362,6 @@ function computeTotals() {
 }
 
 function computeSuggestion() {
-  // Prefer insights for the previous full month (more stable than partial current month)
   const months = state.monthly || [];
   const prevMonth = months.length > 1 ? months[months.length - 2] : null;
   const prevExpenseTotal = prevMonth ? prevMonth.expense : 0;
@@ -385,8 +384,6 @@ function computeSuggestion() {
       )}.`;
     }
   }
-
-  // Fallback: show a suggestion based on income (same as before)
   const baseIncome =
     Number(state.profile?.monthly_income) || state.totals?.income || 0;
   if (!baseIncome) {

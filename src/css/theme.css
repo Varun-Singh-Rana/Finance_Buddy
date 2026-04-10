@@ -1,7 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap");
 
 :root {
-  /* Palette */
   --bg-900: #040612;
   --bg-800: #071026;
   --surface-glass: rgba(255, 255, 255, 0.03);
@@ -16,25 +15,18 @@
   --danger: #ff6b6b;
   --border: rgba(255, 255, 255, 0.06);
   --glow-color: rgba(0, 200, 150, 0.1);
-
-  /* Elevation / radii */
   --radius-lg: 14px;
   --radius-md: 10px;
   --shadow-soft: 0 10px 30px rgba(3, 8, 15, 0.6);
   --glow: 0 10px 40px var(--glow-color);
-
-  /* Additional aliases used across page CSS */
   --sidebar: #0f192d;
   --teal: var(--accent-teal);
-
-  /* Typography scale */
   --fs-sm: 12px;
   --fs-base: 14px;
   --fs-md: 16px;
   --fs-lg: 20px;
   --fs-xl: 24px;
   --leading: 1.45;
-  /* Legacy aliases for page-specific CSS compatibility */
   --bg: var(--bg-900);
   --panel: var(--bg-800);
   --panel-light: var(--card-bg);
@@ -46,7 +38,6 @@
   --accent-purple: var(--accent-violet);
   --shadow: var(--shadow-soft);
   --radius: var(--radius-md);
-  /* Titlebar/window-control tokens (used by window-controls.css) */
   --titlebar-height: 36px;
   --titlebar-bg: rgba(9, 16, 30, 0.9);
   --titlebar-color: var(--text-strong);
@@ -78,7 +69,7 @@ body {
   line-height: var(--leading);
 }
 
-/* Layout & Navigation (shared across pages) */
+/*for layout*/
 .app-container {
   display: flex;
   min-height: 100vh;
@@ -265,7 +256,6 @@ body {
   font-weight: 600;
 }
 
-/* Responsive: unify sidebar and layout behavior across pages */
 @media (max-width: 1100px) {
   .stat-grid {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -279,7 +269,6 @@ body {
   }
 }
 
-/* Force consistent sidebar width and nav sizing across all pages */
 .app-container > .sidebar,
 aside.sidebar {
   flex: 0 0 240px !important;
@@ -309,7 +298,6 @@ main.main {
   flex: 0 0 22px !important;
 }
 
-/* Ensure active nav visual consistency */
 .sidebar .nav-link.active {
   padding-left: 14px !important;
   padding-right: 14px !important;

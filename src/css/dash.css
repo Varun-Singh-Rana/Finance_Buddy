@@ -17,12 +17,10 @@
     transform 0.2s ease,
     box-shadow 0.2s ease;
   will-change: transform;
-  /* gentle floating animation */
   animation: statFloat 6s ease-in-out infinite;
 }
 
 .stat-card:hover {
-  /* Hover should visually lift the card -- override animation if needed */
   transform: translateY(-6px) !important;
   box-shadow: 0 18px 45px rgba(30, 200, 149, 0.28);
 }

@@ -76,11 +76,8 @@ function cacheElements() {
 
 function attachEvents() {
   elements.generateBtn?.addEventListener("click", handleGenerateReport);
-
-  // Open the custom report modal
   elements.customBtn?.addEventListener("click", openCustomModal);
 
-  // Modal controls (may not exist immediately if DOM not ready elsewhere)
   const modal = document.getElementById("customReportModal");
   const modalClose = document.getElementById("customModalClose");
   const modalCancel = document.getElementById("customCancel");
@@ -93,7 +90,6 @@ function attachEvents() {
   });
   modalForm?.addEventListener("submit", handleCreateCustomReport);
 
-  // Handle download button clicks in the report list
   elements.list?.addEventListener("click", async (event) => {
     const button = event.target.closest(".download-btn");
     if (!button) {
@@ -647,7 +643,6 @@ async function generatePdf(report) {
       transactions = [];
     }
 
-    // ensure subscriptions table exists and fetch subscriptions
     try {
       await database.query(`
         CREATE TABLE IF NOT EXISTS subscriptions (
@@ -685,7 +680,6 @@ async function generatePdf(report) {
       subscriptions = [];
     }
 
-    // utility to convert billing cycles to monthly equivalent
     function convertSubscriptionToMonthly(amount, billingCycle) {
       const cycle = (billingCycle || "Monthly").toLowerCase();
       switch (cycle) {
@@ -712,7 +706,6 @@ async function generatePdf(report) {
       else if (t.type === "expense") totals.expense += t.amount;
     });
 
-    // build transactions table rows
     const txRowsHtml = transactions
       .map(
         (t) => `
@@ -727,7 +720,6 @@ async function generatePdf(report) {
       )
       .join("");
 
-    // build subscriptions table rows
     const subRowsHtml = subscriptions
       .map((s) => {
         const monthly = convertSubscriptionToMonthly(s.amount, s.billing_cycle);
@@ -744,7 +736,6 @@ async function generatePdf(report) {
       })
       .join("");
 
-    // build final HTML with tables and summary
     const content = `
       <div style="padding:20px;">
         <h1 style="margin:0 0 6px;font-size:26px;color:#04131c;">${escapeHtml(report.title)}</h1>
@@ -852,10 +843,8 @@ async function generatePdf(report) {
       "Native PDF generation failed, falling back to html2pdf:",
       error,
     );
-    // fallback to client-side html2pdf (previous approach)
   }
 
-  // --- fallback (client-side html2pdf) ---
   return new Promise((resolve, reject) => {
     try {
       const container = document.createElement("div");
@@ -871,7 +860,6 @@ async function generatePdf(report) {
       `;
 
       container.innerHTML = html;
-      // keep in viewport but hidden from pointer events
       container.style.position = "fixed";
       container.style.top = "0";
       container.style.left = "0";
@@ -922,7 +910,6 @@ async function generatePdf(report) {
 function openCustomModal() {
   const modal = document.getElementById("customReportModal");
   if (!modal) return;
-  // populate sensible defaults
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), 1);
   const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -969,7 +956,6 @@ async function handleCreateCustomReport(event) {
       [title, type, format, periodStart, periodEnd, summary],
     );
     const insertedId = result.lastID;
-    // fetch the inserted row
     const sel = await database.query(
       `SELECT id, title, report_type, file_format, period_start, period_end, summary, generated_at
        FROM report_history WHERE id = ? LIMIT 1;`,
@@ -996,7 +982,6 @@ async function handleCreateCustomReport(event) {
       showStatus("Custom report saved.", "success");
       closeCustomModal();
       await refreshData();
-      // offer download immediately
       try {
         await generatePdf(newReport);
         showStatus(`Downloaded "${newReport.title}"`, "success");

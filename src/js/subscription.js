@@ -317,7 +317,6 @@ async function initDatabase() {
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    // Ensure 'is_paused' column exists for older DBs
     try {
       const info = await pool.query("PRAGMA table_info(subscriptions);");
       const cols = info.rows || info || [];
@@ -330,7 +329,6 @@ async function initDatabase() {
         );
       }
     } catch (__err) {
-      // non-fatal: if PRAGMA/ALTER fails, continue without pause support
       console.warn(
         "Could not migrate subscriptions table to add is_paused column",
         __err,
@@ -514,7 +512,6 @@ function buildSubscriptionCard(subscription) {
     }
   }
 
-  // paused indicator
   if (subscription.isPaused) {
     const pausedBadge = document.createElement("span");
     pausedBadge.className = "badge paused-badge";
@@ -662,7 +659,7 @@ function updateSummary(subscriptions) {
   ) {
     return;
   }
-  // Only count active (not paused) subscriptions for summaries
+
   const active = subscriptions.filter((s) => !s.isPaused);
 
   const totals = active.reduce(
@@ -706,18 +703,14 @@ async function handleFormSubmit(event) {
     category: (data.get("category") || "Other").toString(),
     amount: Number(data.get("amount")),
     billingCycle: (data.get("billingCycle") || "Monthly").toString(),
-    // form field is named `startBilling` in the HTML (input id kept as subscriptionNextBilling)
     startBilling: (data.get("startBilling") || "").toString(),
     notes: (data.get("notes") || "").toString().trim(),
   };
 
-  // Determine nextBilling early so validation can run against it.
   const editId = elements.saveButton?.dataset.editId;
   if (editId) {
-    // Editing: preserve legacy behavior where the date input represents next billing
     payload.nextBilling = payload.startBilling;
   } else {
-    // New subscription: compute next billing from provided start date and billing cycle
     payload.nextBilling = "";
     if (payload.startBilling) {
       const startDate = parseDateOnly(payload.startBilling);
@@ -736,8 +729,6 @@ async function handleFormSubmit(event) {
     showStatus("error", validationError);
     return;
   }
-
-  // If editing, update instead of insert
   if (editId) {
     await updateSubscription(Number(editId), payload);
     return;
@@ -894,7 +885,6 @@ async function togglePauseSubscription(id) {
   if (!pool) return;
 
   try {
-    // ensure migration (best-effort)
     const info = await pool.query("PRAGMA table_info(subscriptions);");
     const cols = info.rows || info || [];
     const hasPaused = cols.some((c) => c && c.name === "is_paused");
@@ -970,7 +960,6 @@ function resetForm() {
       nextBillingDefaultDate(),
     );
   }
-  // clear edit state
   if (elements.saveButton) {
     delete elements.saveButton.dataset.editId;
   }

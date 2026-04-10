@@ -40,7 +40,7 @@ function loadEnv() {
     if (error.code !== "MODULE_NOT_FOUND") {
       console.warn(
         "Finlytics database: unable to load .env file:",
-        error.message
+        error.message,
       );
     }
   }
@@ -55,7 +55,7 @@ function getDatabase() {
 
   if (!Database) {
     throw new Error(
-      "SQLite driver missing. Install dependencies with `npm install`."
+      "SQLite driver missing. Install dependencies with `npm install`.",
     );
   }
 
@@ -82,7 +82,7 @@ function createDatabase() {
       if (error) {
         throw new Error(formatConnectionError(error));
       }
-    }
+    },
   );
 
   database.query = (sql, params = []) => runQuery(database, sql, params);
@@ -119,7 +119,7 @@ function resolveDatabasePath() {
       candidate = path.resolve(
         os.tmpdir(),
         getAppDataFolderName(),
-        "finlytics.sqlite"
+        "finlytics.sqlite",
       );
     }
   }
@@ -216,14 +216,14 @@ function resolveDefaultDatabasePath(projectRoot, options = {}) {
       return path.resolve(
         appDataDir,
         getAppDataFolderName(),
-        "finlytics.sqlite"
+        "finlytics.sqlite",
       );
     }
 
     return path.resolve(
       os.tmpdir(),
       getAppDataFolderName(),
-      "finlytics.sqlite"
+      "finlytics.sqlite",
     );
   }
 
@@ -290,9 +290,7 @@ function getAppDataFolderName() {
       cachedAppDataFolderName = String(candidate).trim();
       return cachedAppDataFolderName;
     }
-  } catch (_error) {
-    // ignore
-  }
+  } catch (_error) {}
 
   cachedAppDataFolderName = "Finlytics";
   return cachedAppDataFolderName;
@@ -330,9 +328,7 @@ function getResourcesRoot() {
       if (appPath) {
         return path.resolve(appPath, "..");
       }
-    } catch (_error) {
-      // ignore and fall through
-    }
+    } catch (_error) {}
   }
 
   return null;
@@ -349,7 +345,7 @@ function ensureFileWritable(filePath) {
   try {
     const handle = fs.openSync(
       filePath,
-      fs.constants.O_CREAT | fs.constants.O_RDWR
+      fs.constants.O_CREAT | fs.constants.O_RDWR,
     );
     fs.closeSync(handle);
   } catch (error) {
@@ -362,8 +358,8 @@ function runQuery(database, sql, inputParams) {
   const params = Array.isArray(inputParams)
     ? inputParams
     : inputParams === undefined
-    ? []
-    : [inputParams];
+      ? []
+      : [inputParams];
   const isSelect = /^\s*(select|with|pragma)\b/i.test(queryText);
 
   return new Promise((resolve, reject) => {
@@ -456,7 +452,7 @@ async function getUserProfile() {
     `SELECT id, full_name, date_of_birth, monthly_income, created_at
      FROM user_profile
      ORDER BY id
-     LIMIT 1;`
+     LIMIT 1;`,
   );
   return Array.isArray(result.rows) && result.rows.length > 0
     ? result.rows[0]
@@ -470,7 +466,7 @@ async function saveUserProfile({ fullName, dateOfBirth, monthlyIncome }) {
   await query(
     `INSERT INTO user_profile (full_name, date_of_birth, monthly_income)
      VALUES (?, ?, ?);`,
-    [trimmedName, dateOfBirth, Number(monthlyIncome)]
+    [trimmedName, dateOfBirth, Number(monthlyIncome)],
   );
   return getUserProfile();
 }

@@ -72,7 +72,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await loadProfile();
   await ensureSavingTable();
-  // Apply any pending monthly allocations (idempotent) before loading plans
   try {
     await performMonthlyAllocations();
   } catch (err) {
@@ -320,7 +319,6 @@ async function ensureSavingTable() {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
   `);
-  // Create allocation log tables to record monthly distributions
   await database.query(`
     CREATE TABLE IF NOT EXISTS allocation_log (
       month TEXT PRIMARY KEY,
@@ -338,7 +336,6 @@ async function ensureSavingTable() {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
   `);
-  // Ensure allocation_pct exists for older DBs
   try {
     const info = await database.query("PRAGMA table_info(saving_plan);");
     const cols = info.rows || info || [];
@@ -358,12 +355,8 @@ async function ensureSavingTable() {
   }
 }
 
-// Distribute monthly savings into plans according to each plan's allocation_pct.
-// This function is idempotent per-month by recording processed months in
-// `allocation_log`/`allocation_item` tables.
 async function performMonthlyAllocations() {
   try {
-    // Find the last month we processed (YYYY-MM)
     const lastRes = await database.query(
       "SELECT MAX(month) AS last_month FROM allocation_log;",
     );
@@ -371,12 +364,10 @@ async function performMonthlyAllocations() {
       (lastRes.rows && lastRes.rows[0] && lastRes.rows[0].last_month) || null;
 
     const now = new Date();
-    // The most-recent completed month is the month before the current month
     const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const prevMonthStr = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, "0")}`;
 
     const monthsToProcess = [];
-    // Helper to add one month to YYYY-MM
     const addOneMonth = (mStr) => {
       const [y, mo] = (mStr || "").split("-").map((v) => Number(v));
       if (!Number.isFinite(y) || !Number.isFinite(mo)) return null;
@@ -397,7 +388,6 @@ async function performMonthlyAllocations() {
     if (!monthsToProcess.length) return;
 
     for (const month of monthsToProcess) {
-      // compute net savings for that month (income - expense)
       const totals = await database.query(
         `
         SELECT
@@ -411,20 +401,14 @@ async function performMonthlyAllocations() {
 
       const row = (totals.rows && totals.rows[0]) || { income: 0, expense: 0 };
       const net = toNumber(row.income) - toNumber(row.expense);
-
-      // Record the month so we don't process it again. We record even zero/negative
-      // totals so the month is considered processed.
       await database.query(
         "INSERT INTO allocation_log(month, total, created_at) VALUES(?, ?, ?);",
         [month, net, new Date().toISOString()],
       );
 
       if (net <= 0) {
-        // nothing to distribute
         continue;
       }
-
-      // Get plans with allocations
       const plansRes = await database.query(
         "SELECT id, IFNULL(allocation_pct, 0) AS allocation_pct FROM saving_plan WHERE IFNULL(allocation_pct,0) > 0;",
       );
@@ -435,8 +419,6 @@ async function performMonthlyAllocations() {
         if (pct <= 0) continue;
         const amount = Number((net * (pct / 100)).toFixed(2));
         if (amount <= 0) continue;
-
-        // Add amount to plan's saved_amount and record an allocation item
         await database.query(
           "UPDATE saving_plan SET saved_amount = saved_amount + ? WHERE id = ?;",
           [amount, p.id],

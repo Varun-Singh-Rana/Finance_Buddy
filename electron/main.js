@@ -118,7 +118,7 @@ async function createWindow() {
   });
 }
 
-// IPC handler to generate PDF from HTML using a hidden BrowserWindow and printToPDF
+// IPC handler for PDF
 ipcMain.handle("reports:generate-pdf", async (_event, { html, filename }) => {
   const win = new BrowserWindow({
     show: false,
@@ -132,7 +132,6 @@ ipcMain.handle("reports:generate-pdf", async (_event, { html, filename }) => {
     const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
     await win.loadURL(dataUrl);
 
-    // allow time for resources to load
     await new Promise((res) => setTimeout(res, 250));
 
     const pdfBuffer = await win.webContents.printToPDF({
